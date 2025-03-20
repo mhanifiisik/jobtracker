@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+* Reset CSS */ *,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@theme {
+  --color-primary: #0a7280;
+  --color-background: #fdfdfd;
+  --font-sans: 'Inter';
+}
+
+@layer theme {
+  [data-theme='dark'] {
+    --color-primary: #66c8b6;
+    --color-background: #1a202c;
+  }
+}
