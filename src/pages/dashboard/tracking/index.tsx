@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import supabase from '../../../utils/supabase'
 import { JobListing } from '../../../types/job-listing'
 import {
@@ -21,11 +21,7 @@ function TrackingPage() {
   const [error, setError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchJobs()
-  }, [])
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase.from('jobs').select('*')
@@ -42,12 +38,14 @@ function TrackingPage() {
 
       setJobs(jobs)
       setError(null)
-    } catch (error) {
-      setError(error.message as string)
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterStatus])
+
+  useEffect(() => {
+    fetchJobs().catch(console.error)
+  }, [fetchJobs])
 
   const deleteJob = async (id: number) => {
     if (confirm('Are you sure you want to delete this job?')) {
@@ -108,7 +106,9 @@ function TrackingPage() {
             <select
               className="bg-background border-muted-light focus:border-primary focus:ring-primary h-10 rounded-md border pr-10 pl-3 text-sm focus:ring-1 focus:outline-none"
               value={filterStatus ?? ''}
-              onChange={(e) => setFilterStatus(e.target.value || null)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value)
+              }}
             >
               <option value="">All Statuses</option>
               {Object.values(JobStatus).map((status) => (
