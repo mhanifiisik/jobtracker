@@ -69,7 +69,9 @@ export const Dropdown = <T,>({
             {options.map((option) => (
               <li
                 key={uuidv4()}
-                onClick={() => handleOptionClick(option)}
+                onClick={() => {
+                  handleOptionClick(option)
+                }}
                 className="flex cursor-pointer items-center justify-center border-b border-gray-200 p-2 hover:bg-gray-100"
                 role="option"
                 aria-selected={selectedOption?.value === option.value}

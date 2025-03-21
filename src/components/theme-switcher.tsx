@@ -1,5 +1,5 @@
+import useTheme from '@/utils/use-theme'
 import { Moon, Sun } from 'lucide-react'
-import useTheme from '../utils/use-theme'
 import { Dropdown } from './dropdown'
 
 type ThemeOption = 'light' | 'dark'
@@ -22,7 +22,9 @@ const ThemeSwitcher = () => {
     <Dropdown
       options={themeOptions}
       defaultValue={themeOptions.find((option) => option.value === theme)}
-      onChange={(option) => handleThemeChange(option.value)}
+      onChange={(option) => {
+        handleThemeChange(option.value)
+      }}
       className="flex h-10 w-10 items-center justify-center"
     />
   )

@@ -1,5 +1,5 @@
+import { NavItem } from '@/types/nav-item'
 import { Link } from 'react-router'
-import { NavItem } from '../types/nav-item'
 
 interface NavLinkProps {
   item: NavItem

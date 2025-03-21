@@ -1,16 +1,14 @@
+import { navItems } from '@/constants/navlinks.constant'
+import { useSession } from '@/utils/use-session'
+import { Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-
-import { Link, useLocation } from 'react-router'
 import ThemeSwitcher from './theme-switcher'
-import { useSession } from '../utils/use-session'
-import { ChevronLeft, ChevronRight, Briefcase } from 'lucide-react'
-import { navItems } from '../constants/navlinks.constant'
-import NavLink from './navlink'
+import { Link, useLocation } from 'react-router'
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false)
-  const location = useLocation()
   const { session } = useSession()
+  const location = useLocation()
 
   const toggleSidebar = () => {
     setCollapsed((prev) => !prev)
@@ -43,10 +41,35 @@ export const Sidebar = () => {
       </div>
 
       <div className="flex-1 p-3">
-        <nav className="space-y-1">
+        <nav className="flex flex-col items-start justify-center gap-5">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
-            return <NavLink key={item.path} item={item} collapsed={collapsed} active={isActive} />
+            return collapsed ? (
+              <Link
+                to={item.path}
+                className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent/20 hover:text-foreground'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="sr-only">{item.label}</span>
+              </Link>
+            ) : (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-accent/20 hover:text-foreground'
+                }`}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            )
           })}
         </nav>
       </div>

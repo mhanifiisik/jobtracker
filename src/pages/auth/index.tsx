@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import supabase from '../../utils/supabase'
 import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router'
+import supabase from '@/utils/supabase'
+
+
 const AuthPage = () => {
   const [isSignIn, setIsSignIn] = useState<boolean>(true)
   const [error, setError] = useState<string>('')

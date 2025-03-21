@@ -1,7 +1,8 @@
-import { Navigate, Outlet } from 'react-router'
-import { useSession } from '../utils/use-session'
-import { Sidebar } from './sidabar'
-import { Suspense } from 'react'
+import { useSession } from "@/utils/use-session"
+import { Navigate, Outlet } from "react-router"
+import Sidebar from "./sidabar"
+import Loading from "./ui/loading"
+import { Suspense } from "react"
 
 const PageLayout = () => {
   const { session } = useSession()
@@ -12,9 +13,11 @@ const PageLayout = () => {
 
   return (
     <main className="bg-background text-foreground flex min-h-screen">
-      <Sidebar />
-      <div className="h-[95vh] w-full items-center overflow-x-hidden overflow-y-auto p-4">
-        <Suspense fallback={<div>Loading...</div>}>
+      <div className="h-screen">
+        <Sidebar />
+      </div>
+      <div className="flex-1 p-4 h-screen transition-all duration-300 overflow-x-hidden overflow-y-auto">
+        <Suspense fallback={<Loading />}>
           <Outlet />
         </Suspense>
       </div>

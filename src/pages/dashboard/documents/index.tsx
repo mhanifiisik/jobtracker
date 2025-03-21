@@ -1,9 +1,8 @@
-const Analytics = () => {
+export default function DocumentsPage() {
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-red-300">
-      <p>ANALYTICS CONTENT GOES HERE</p>
+      <p>DocumentsPage CONTENT GOES HERE</p>
     </div>
   )
 }
 
-export default Analytics
