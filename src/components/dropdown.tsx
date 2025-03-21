@@ -50,7 +50,11 @@ export const Dropdown = <T,>({
     <div ref={dropdownRef} className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen((prev) => !prev)
+          }
+        }}
         className={`bg-background flex w-full items-center justify-center rounded-md border p-2 text-center shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
           disabled ? 'cursor-not-allowed bg-gray-100' : 'cursor-pointer'
         }`}

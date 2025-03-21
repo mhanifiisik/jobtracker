@@ -14,27 +14,26 @@ import LeetCodePage from './pages/dashboard/leetcode'
 import DocumentsPage from './pages/dashboard/documents'
 import JobsPage from './pages/dashboard/jobs'
 
-
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
-    <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-        <BrowserRouter>
-          <Routes>
-            <Route index element={<App />} />
-            <Route path="auth" element={<AuthPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-            <Route path="dashboard" element={<PageLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="leetcode" element={<LeetCodePage />} />
-              <Route path="applications" element={<Applications />} />
-              <Route path="documents" element={<DocumentsPage />} />
-              <Route path="jobs" element={<JobsPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </SessionProvider>
-    </QueryClientProvider>
+  <QueryClientProvider client={queryClient}>
+    <SessionProvider>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      <BrowserRouter>
+        <Routes>
+          <Route index element={<App />} />
+          <Route path="auth" element={<AuthPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+          <Route path="dashboard" element={<PageLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="leetcode" element={<LeetCodePage />} />
+            <Route path="applications" element={<Applications />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="jobs" element={<JobsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </SessionProvider>
+  </QueryClientProvider>
 )

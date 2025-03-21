@@ -2,6 +2,8 @@ name: pnpm Example Workflow
 
 on:
   push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,17 +29,10 @@ jobs:
         run: pnpm install
 
       - name: Build Project
-        run: pnpm run build # Build your React Vite project using pnpm
+        run: pnpm run build
 
-      - name: Deploy to GitHub Pages
-        if: success() # Only deploy if the build succeeds
-        run: |
-          pnpm add gh-pages --save-dev  # Add gh-pages if not already in dependencies
-          pnpm run deploy  # Assuming you have a deploy script in your package.json
+      - name: Eslint
+        run: pnpm run lint
 
-      - name: Upload Build Artifacts (Optional)
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vite-build
-          path: dist # Path to your build directory (usually `dist` in Vite projects)
+      - name: Format
+        run: pnpm run format

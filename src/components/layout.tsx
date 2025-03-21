@@ -1,8 +1,8 @@
-import { useSession } from "@/utils/use-session"
-import { Navigate, Outlet } from "react-router"
-import Sidebar from "./sidabar"
-import Loading from "./ui/loading"
-import { Suspense } from "react"
+import { useSession } from '@/utils/use-session'
+import { Navigate, Outlet } from 'react-router'
+import Sidebar from './sidabar'
+import Loading from './ui/loading'
+import { Suspense } from 'react'
 
 const PageLayout = () => {
   const { session } = useSession()
@@ -16,7 +16,7 @@ const PageLayout = () => {
       <div className="h-screen">
         <Sidebar />
       </div>
-      <div className="flex-1 p-4 h-screen transition-all duration-300 overflow-x-hidden overflow-y-auto">
+      <div className="h-screen flex-1 overflow-x-hidden overflow-y-auto p-4 transition-all duration-300">
         <Suspense fallback={<Loading />}>
           <Outlet />
         </Suspense>

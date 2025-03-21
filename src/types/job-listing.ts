@@ -1,4 +1,4 @@
-import { JobStatus } from "@/constants/job-status.enum"
+import { JobStatus } from '@/constants/job-status.enum'
 
 export interface JobListing {
   id: number
