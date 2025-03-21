@@ -1,28 +1,30 @@
-name: React Vite CI/CD
+name: pnpm Example Workflow
 
 on:
   push:
-    branches:
-      - main # Trigger the action only on pushing to the main branch
-  pull_request:
-    branches:
-      - main # Trigger the action for pull requests targeting the main branch
 
 jobs:
   build:
-    runs-on: ubuntu-latest # The runner environment (Ubuntu in this case)
-
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        node-version: [22, 23]
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4 # Checkout the code from the repository
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js 23.9.0
-        uses: actions/setup-node@v3
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          node-version: '23.9.0' # Specify Node.js version 23.9.0
+          version: 10
 
-      - name: Install Dependencies
-        run: pnpm install # Install dependencies using pnpm
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Build Project
         run: pnpm run build # Build your React Vite project using pnpm
