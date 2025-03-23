@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link } from 'react-router';
 
 const NotFoundPage: React.FC = () => {
   return (
@@ -21,7 +21,7 @@ const NotFoundPage: React.FC = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default NotFoundPage
+export default NotFoundPage;

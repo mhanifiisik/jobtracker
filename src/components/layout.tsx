@@ -1,14 +1,14 @@
-import { useSession } from '@/utils/use-session'
-import { Navigate, Outlet } from 'react-router'
-import Sidebar from './sidabar'
-import Loading from './ui/loading'
-import { Suspense } from 'react'
+import { Navigate, Outlet } from 'react-router';
+import Sidebar from './sidabar';
+import Loading from './ui/loading';
+import { Suspense } from 'react';
+import { useSession } from '@/hooks/use-session';
 
 const PageLayout = () => {
-  const { session } = useSession()
+  const { session } = useSession();
 
   if (!session) {
-    return <Navigate to="/auth" />
+    return <Navigate to="/auth" />;
   }
 
   return (
@@ -22,7 +22,7 @@ const PageLayout = () => {
         </Suspense>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default PageLayout
+export default PageLayout;

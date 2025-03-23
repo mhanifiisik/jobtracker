@@ -1,18 +1,19 @@
-import { useState, useRef, useEffect, ReactNode } from 'react'
-import { v4 as uuidv4 } from 'uuid'
+import type { ReactNode } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DropdownOption<T> {
-  value: T
-  label: ReactNode
+  value: T;
+  label: ReactNode;
 }
 
 interface DropdownProps<T> {
-  options: DropdownOption<T>[]
-  defaultValue?: DropdownOption<T>
-  onChange: (selectedOption: DropdownOption<T>) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
+  options: DropdownOption<T>[];
+  defaultValue?: DropdownOption<T>;
+  onChange: (selectedOption: DropdownOption<T>) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
 }
 
 export const Dropdown = <T,>({
@@ -21,30 +22,30 @@ export const Dropdown = <T,>({
   onChange,
   placeholder = 'Select an option',
   disabled = false,
-  className = ''
+  className = '',
 }: DropdownProps<T>) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const [selectedOption, setSelectedOption] = useState<DropdownOption<T> | undefined>(defaultValue)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [selectedOption, setSelectedOption] = useState<DropdownOption<T> | undefined>(defaultValue);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleOptionClick = (option: DropdownOption<T>) => {
-    setSelectedOption(option)
-    onChange(option)
-    setIsOpen(false)
-  }
+    setSelectedOption(option);
+    onChange(option);
+    setIsOpen(false);
+  };
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -52,7 +53,7 @@ export const Dropdown = <T,>({
         type="button"
         onClick={() => {
           if (!disabled) {
-            setIsOpen((prev) => !prev)
+            setIsOpen(prev => !prev);
           }
         }}
         className={`bg-background flex w-full items-center justify-center rounded-md border p-2 text-center shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
@@ -70,11 +71,11 @@ export const Dropdown = <T,>({
           role="listbox"
         >
           <ul className="py-1 text-center">
-            {options.map((option) => (
+            {options.map(option => (
               <li
                 key={uuidv4()}
                 onClick={() => {
-                  handleOptionClick(option)
+                  handleOptionClick(option);
                 }}
                 className="flex cursor-pointer items-center justify-center border-b border-gray-200 p-2 hover:bg-gray-100"
                 role="option"
@@ -87,5 +88,5 @@ export const Dropdown = <T,>({
         </div>
       )}
     </div>
-  )
-}
+  );
+};

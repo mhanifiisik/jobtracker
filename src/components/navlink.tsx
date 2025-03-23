@@ -1,14 +1,14 @@
-import { NavItem } from '@/types/nav-item'
-import { Link } from 'react-router'
+import type { NavItem } from '@/types/nav-item';
+import { Link } from 'react-router';
 
 interface NavLinkProps {
-  item: NavItem
-  collapsed: boolean
-  active: boolean
+  item: NavItem;
+  collapsed: boolean;
+  active: boolean;
 }
 
 const NavLink = ({ item, collapsed, active }: NavLinkProps) => {
-  const Icon = item.icon
+  const Icon = item.icon;
 
   if (collapsed) {
     return (
@@ -27,7 +27,7 @@ const NavLink = ({ item, collapsed, active }: NavLinkProps) => {
           {item.label}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -42,7 +42,7 @@ const NavLink = ({ item, collapsed, active }: NavLinkProps) => {
       <item.icon className="h-5 w-5 flex-shrink-0" />
       <span className="flex-shrink-0 whitespace-nowrap">{item.label}</span>
     </Link>
-  )
-}
+  );
+};
 
-export default NavLink
+export default NavLink;

@@ -1,18 +1,18 @@
-import { navItems } from '@/constants/navlinks.constant'
-import { useSession } from '@/utils/use-session'
-import { Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
-import ThemeSwitcher from './theme-switcher'
-import { Link, useLocation } from 'react-router'
+import { navItems } from '@/constants/navlinks.constant';
+import { Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import ThemeSwitcher from './theme-switcher';
+import UserDropdown from './user-dropdown';
+import type { Location } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 export const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState<boolean>(false)
-  const { session } = useSession()
-  const location = useLocation()
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const location: Location = useLocation();
 
-  const toggleSidebar = () => {
-    setCollapsed((prev) => !prev)
-  }
+  const toggleSidebar = useCallback(() => {
+    setCollapsed(prev => !prev);
+  }, []);
 
   return (
     <aside
@@ -42,8 +42,8 @@ export const Sidebar = () => {
 
       <div className="flex-1 p-3">
         <nav className="flex flex-col items-start justify-center gap-5">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path
+          {navItems.map(item => {
+            const isActive = location.pathname === item.path;
             return collapsed ? (
               <Link
                 to={item.path}
@@ -69,39 +69,20 @@ export const Sidebar = () => {
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span className="truncate">{item.label}</span>
               </Link>
-            )
+            );
           })}
         </nav>
       </div>
 
       <div className="border-t border-gray-200 p-3 dark:border-gray-700">
         {!collapsed ? (
-          <div className="flex items-center justify-center gap-2">
-            <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-              <img
-                src={session?.user.user_metadata.picture as string}
-                alt="Avatar"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                {session?.user.email}
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-2">
+            <UserDropdown collapsed={collapsed} />
             <ThemeSwitcher />
           </div>
         ) : (
           <div className="flex flex-col-reverse items-center justify-center gap-3">
-            <div className="group relative">
-              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                <img
-                  src={session?.user.user_metadata.picture as string}
-                  alt="Avatar"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
+            <UserDropdown collapsed={collapsed} />
             <div className="group relative">
               <ThemeSwitcher />
             </div>
@@ -109,6 +90,6 @@ export const Sidebar = () => {
         )}
       </div>
     </aside>
-  )
-}
-export default Sidebar
+  );
+};
+export default Sidebar;

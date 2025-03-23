@@ -1,114 +1,101 @@
-import { useCallback, useState } from 'react'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
-import { toast } from 'react-toastify'
-import { useNavigate } from 'react-router'
-import supabase from '@/utils/supabase'
+import { useCallback, useState } from 'react';
+import { useFormik } from 'formik';
+import { useNavigate } from 'react-router';
+import supabase from '@/utils/supabase';
+import toast from 'react-hot-toast';
+import { handleError } from '@/utils/error-handler';
+import { signInSchema, signUpSchema } from '@/schemas/user-schemas';
 
 const AuthPage = () => {
-  const [isSignIn, setIsSignIn] = useState<boolean>(true)
-  const [error, setError] = useState<string>('')
-  const navigate = useNavigate()
-  const signInSchema = Yup.object().shape({
-    email: Yup.string().email('Invalid email address').required('Email is required'),
-    password: Yup.string().required('Password is required')
-  })
-
-  const signUpSchema = Yup.object().shape({
-    username: Yup.string().min(3, 'Minimum 3 characters').required('Username is required'),
-    email: Yup.string().email('Invalid email address').required('Email is required'),
-    password: Yup.string().min(6, 'Minimum 6 characters').required('Password is required')
-  })
+  const [isSignIn, setIsSignIn] = useState<boolean>(true);
+  const navigate = useNavigate();
 
   const signInFormik = useFormik({
     initialValues: {
       email: '',
-      password: ''
+      password: '',
     },
     validationSchema: signInSchema,
-    onSubmit: async (values) => {
+    onSubmit: async values => {
       try {
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
-          password: values.password
-        })
+          password: values.password,
+        });
 
         if (error) {
-          toast(error.message)
+          handleError(error);
         } else {
-          toast.success('Signed in successfully!')
-          await navigate('/dashboard')
+          await navigate('/dashboard');
         }
       } catch (err) {
-        toast.error('An unexpected error occurred')
-        console.error(err)
+        handleError(err);
       }
-    }
-  })
+    },
+  });
 
   const signUpFormik = useFormik({
     initialValues: {
       username: '',
       email: '',
-      password: ''
+      password: '',
     },
     validationSchema: signUpSchema,
-    onSubmit: async (values) => {
+    onSubmit: async values => {
       try {
         const { error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
           options: {
             data: {
-              username: values.username
-            }
-          }
-        })
+              username: values.username,
+            },
+          },
+        });
 
         if (error) {
-          toast(error.message)
+          handleError(error);
         } else {
-          toast.success('Signed up successfully! Please check your email for verification.')
-          setIsSignIn(true)
+          toast.success('Signed up successfully! Please check your email for verification.');
+          setIsSignIn(true);
         }
       } catch (err) {
-        toast.error('An unexpected error occurred')
-        console.error(err)
+        handleError(err);
       }
-    }
-  })
+    },
+  });
 
   const toggleMode = () => {
-    setIsSignIn(!isSignIn)
-  }
+    setIsSignIn(!isSignIn);
+  };
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
 
     if (error) {
-      setError(error.message)
+      handleError(error);
     }
-  }, [])
+  }, []);
 
   const signInWithGithub = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
 
     if (error) {
-      setError(error.message)
+      handleError(error);
     }
-  }, [])
+  }, []);
 
-  const currentFormik = isSignIn ? signInFormik : signUpFormik
+  const currentFormik = isSignIn ? signInFormik : signUpFormik;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center">
@@ -122,11 +109,14 @@ const AuthPage = () => {
             {isSignIn ? 'Sign in with your account' : 'Create your account'}
           </p>
 
-          {error && toast(error)}
           <div className="mb-6 flex gap-4">
             <button
               type="button"
-              onClick={signInWithGoogle}
+              onClick={() => {
+                void (async () => {
+                  await signInWithGoogle();
+                })();
+              }}
               className="flex flex-1 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 py-2 hover:cursor-pointer hover:bg-gray-100"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 30 30">
@@ -136,7 +126,11 @@ const AuthPage = () => {
             </button>
             <button
               type="button"
-              onClick={signInWithGithub}
+              onClick={() => {
+                void (async () => {
+                  await signInWithGithub();
+                })();
+              }}
               className="flex flex-1 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 py-2 hover:cursor-pointer hover:bg-gray-100"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 30 30">
@@ -223,7 +217,7 @@ const AuthPage = () => {
           <div className="relative mt-4 text-center text-sm text-gray-700">
             {isSignIn ? (
               <span>
-                Don’t have an account?{' '}
+                Don't have an account?{' '}
                 <button type="button" onClick={toggleMode} className="hover:underline">
                   Sign up
                 </button>
@@ -240,7 +234,7 @@ const AuthPage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AuthPage
+export default AuthPage;

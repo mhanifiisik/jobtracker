@@ -1,4 +1,4 @@
-import { JobStatus } from '../constants/job-status.enum'
+import { JobStatus } from '../constants/job-status.enum';
 
 export const JobStatusLabels: Record<JobStatus, string> = {
   [JobStatus.New]: 'New',
@@ -6,5 +6,5 @@ export const JobStatusLabels: Record<JobStatus, string> = {
   [JobStatus.InInterview]: 'In Interview',
   [JobStatus.OnWishlist]: 'On Wishlist',
   [JobStatus.Rejected]: 'Rejected',
-  [JobStatus.ReadyForReview]: 'Ready for Review'
-}
+  [JobStatus.ReadyForReview]: 'Ready for Review',
+};
