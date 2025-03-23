@@ -1,20 +1,8 @@
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { ErrorType } from '@/constants/error-type.enum';
 
-// Error types enum
-export enum ErrorType {
-  NETWORK = 'network',
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  NOT_FOUND = 'not_found',
-  VALIDATION = 'validation',
-  SERVER = 'server',
-  UNKNOWN = 'unknown',
-}
-
-// App error interface
 export interface AppError {
   type: ErrorType;
   message: string;
-  originalError?: Error | PostgrestError;
+  originalError?: unknown;
   code?: string;
 }

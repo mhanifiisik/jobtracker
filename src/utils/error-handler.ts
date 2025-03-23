@@ -4,16 +4,23 @@ import type { AppError } from '@/types/errors';
 import { ErrorType } from '@/types/errors';
 import { ERROR_MESSAGES } from '@/constants/error-messages';
 
-export const handleError = (error: Error | PostgrestError, silent = false): AppError => {
+function isPostgrestError(error: unknown): error is PostgrestError {
+  return error instanceof Object && 'code' in error && 'message' in error && 'details' in error;
+}
+
+function isError(error: unknown): error is Error {
+  return error instanceof Error;
+}
+
+export const handleError = (error: unknown, silent = false): AppError => {
   let appError: AppError = {
     type: ErrorType.UNKNOWN,
     message: ERROR_MESSAGES.UNKNOWN,
-    originalError: error,
+    originalError: isError(error) ? error : new Error(String(error)),
   };
 
-  if (error instanceof Object && 'code' in error && 'message' in error && 'details' in error) {
+  if (isPostgrestError(error)) {
     const postgrestError = error;
-
     switch (postgrestError.code) {
       case '23505':
         appError = {
@@ -73,7 +80,7 @@ export const handleError = (error: Error | PostgrestError, silent = false): AppE
           code: postgrestError.code,
         };
     }
-  } else if (error instanceof Error) {
+  } else if (isError(error)) {
     if (error.message.includes('Failed to fetch') || error.message.includes('Network Error')) {
       appError = {
         type: ErrorType.NETWORK,
