@@ -1,20 +1,28 @@
-import JobCard from '@/components/job-card'
-import { useFetchData } from '@/hooks/use-fetch-data'
-import { useMutateData } from '@/hooks/use-mutate-data'
-import { useCallback } from 'react'
-import { MutationType } from '@/constants/mutation-type.enum'
+import JobCard from '@/components/job-card';
+import { MutationType } from '@/constants/mutation-type.enum';
+import { useFetchData } from '@/hooks/use-fetch-data';
+import { useMutateData } from '@/hooks/use-mutate-data';
+import toast from 'react-hot-toast';
 
 export default function JobsPage() {
-  const { data: jobs, isLoading } = useFetchData('jobs', {})
+  const { data: jobs, isLoading } = useFetchData('jobs', {});
 
-  const { mutate: deleteJob } = useMutateData('jobs', MutationType.DELETE)
+  const { mutateAsync: deleteJob } = useMutateData('jobs', MutationType.DELETE);
 
-  const handleDelete = useCallback(
-    (id: number) => {
-      deleteJob({ id })
-    },
-    [deleteJob]
-  )
+  const handleDelete = async (jobId: number) => {
+    if (!jobId) {
+      toast.error('Invalid job ID');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this job?')) {
+      try {
+        await deleteJob(jobId);
+      } catch (error) {
+        console.error('Error deleting job:', error);
+      }
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,11 +42,11 @@ export default function JobsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} onDelete={handleDelete} />
+          {jobs.map(job => (
+            <JobCard key={job.id} job={job} onDelete={() => void handleDelete(job.id)} />
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }

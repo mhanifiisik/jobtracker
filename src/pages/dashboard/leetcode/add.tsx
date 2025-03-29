@@ -1,193 +1,181 @@
-import { useMutateData } from '@/hooks/use-mutate-data';
+import { useState } from 'react';
+import { Link } from 'react-router';
+import { ArrowLeft, Plus } from 'lucide-react';
+import type { Database } from '@/types/database';
 import { useFetchData } from '@/hooks/use-fetch-data';
-import { QuestionDifficulty } from '@/constants/question-difficulty.enum';
+import { useMutateData } from '@/hooks/use-mutate-data';
 import { useSession } from '@/hooks/use-session';
-import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { MutationType } from '@/constants/mutation-type.enum';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { Link, useNavigate } from 'react-router';
 
-const LeetCodeAddPage = () => {
-  const navigate = useNavigate();
+type QuestionDifficulty = Database['public']['Enums']['difficulty_enum'];
+
+const QuestionForm = () => {
   const { session } = useSession();
   const userId = session?.user.id;
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>('easy');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
 
-  const { data: categories } = useFetchData<'question_categories'>('question_categories', {
+  const { data: categories } = useFetchData('question_categories', {
     userId,
+    orderBy: 'name',
+    order: 'asc',
   });
 
-  const questionMutation = useMutateData('questions', MutationType.INSERT);
-  const progressMutation = useMutateData('user_question_progress', MutationType.INSERT);
+  const { mutateAsync: createQuestion } = useMutateData('questions', MutationType.INSERT);
 
-  const validationSchema = Yup.object({
-    title: Yup.string().required('Title is required'),
-    difficulty: Yup.mixed()
-      .oneOf(Object.values(QuestionDifficulty))
-      .required('Difficulty is required'),
-    category_id: Yup.string().nullable(),
-    url: Yup.string().url('Invalid URL format').nullable(),
-    notes: Yup.string().nullable(),
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || !title.trim()) return;
 
-  const formik = useFormik({
-    initialValues: {
-      title: '',
-      difficulty: QuestionDifficulty.Medium,
-      category_id: '',
-      url: '',
-      notes: '',
-    },
-    validationSchema,
-    onSubmit: async values => {
-      if (!userId) {
-        toast.error('You must be logged in to add questions');
-        return;
-      }
-
-      const result = (await questionMutation.mutateAsync({
-        title: values.title,
-        difficulty: values.difficulty,
-        category_id: values.category_id || null,
-        url: values.url || null,
-        notes: values.notes || null,
+    try {
+      await createQuestion({
+        title: title.trim(),
+        url: url.trim(),
+        difficulty,
+        category_id: categoryId,
+        notes: notes.trim(),
         user_id: userId,
-      })) as { data: { id: number }[] };
-
-      const newQuestion = result.data as { id: number }[];
-
-      if (newQuestion[0]) {
-        await progressMutation.mutateAsync({
-          user_id: userId,
-          question_id: newQuestion[0].id,
-          status: 'NOT_STARTED',
-          times_solved: 0,
-        });
-
-        toast.success('Question added successfully');
-        await navigate('/dashboard/leetcode');
-      }
-    },
-  });
+      });
+      setTitle('');
+      setUrl('');
+      setDifficulty('easy');
+      setCategoryId(null);
+      setNotes('');
+      toast.success('Question added successfully!');
+    } catch (error) {
+      toast.error('Failed to add question');
+      console.error(error);
+    }
+  };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
-      <Link to="/dashboard/leetcode" className="text-primary mb-6 flex items-center gap-2">
-        <ArrowLeft size={16} /> Back to Questions
-      </Link>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="title" className="text-foreground mb-2 block text-sm font-medium">
+          Question Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          value={title}
+          onChange={e => {
+            setTitle(e.target.value);
+          }}
+          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
+          placeholder="e.g., Two Sum, Valid Parentheses"
+          required
+        />
+      </div>
 
-      <h1 className="text-foreground mb-6 text-2xl font-bold">Add New Question</h1>
+      <div>
+        <label htmlFor="url" className="text-foreground mb-2 block text-sm font-medium">
+          LeetCode URL (Optional)
+        </label>
+        <input
+          type="url"
+          id="url"
+          value={url}
+          onChange={e => {
+            setUrl(e.target.value);
+          }}
+          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
+          placeholder="https://leetcode.com/problems/..."
+        />
+      </div>
 
-      <form
-        onSubmit={formik.handleSubmit}
-        className="bg-card border-border space-y-6 rounded-lg border p-6"
-      >
-        <div>
-          <label htmlFor="title" className="text-foreground mb-1 block text-sm font-medium">
-            Question Title*
-          </label>
-          <input
-            id="title"
-            type="text"
-            name="title"
-            className="bg-background border-border focus:ring-primary w-full rounded border p-2 focus:ring-2 focus:outline-none"
-            value={formik.values.title}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
-          {formik.touched.title && formik.errors.title && (
-            <div className="text-sm text-red-600">{formik.errors.title}</div>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="difficulty" className="text-foreground mb-1 block text-sm font-medium">
-            Difficulty*
-          </label>
-          <select
-            id="difficulty"
-            name="difficulty"
-            className="bg-background border-border focus:ring-primary w-full rounded border p-2 focus:ring-2 focus:outline-none"
-            value={formik.values.difficulty}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          >
-            {Object.values(QuestionDifficulty).map(difficulty => (
-              <option key={difficulty} value={difficulty}>
-                {difficulty}
-              </option>
-            ))}
-          </select>
-          {formik.touched.difficulty && formik.errors.difficulty && (
-            <div className="text-sm text-red-600">{formik.errors.difficulty}</div>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="category_id" className="text-foreground mb-1 block text-sm font-medium">
-            Category
-          </label>
-          <select
-            id="category_id"
-            name="category_id"
-            className="bg-background border-border focus:ring-primary w-full rounded border p-2 focus:ring-2 focus:outline-none"
-            value={formik.values.category_id}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          >
-            <option value="">None</option>
-            {categories?.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="url" className="text-foreground mb-1 block text-sm font-medium">
-            Question URL
-          </label>
-          <input
-            id="url"
-            type="url"
-            name="url"
-            className="bg-background border-border focus:ring-primary w-full rounded border p-2 focus:ring-2 focus:outline-none"
-            value={formik.values.url}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            placeholder="https://leetcode.com/problems/..."
-          />
-          {formik.touched.url && formik.errors.url && (
-            <div className="text-sm text-red-600">{formik.errors.url}</div>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="notes" className="text-foreground mb-1 block text-sm font-medium">
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            className="bg-background border-border focus:ring-primary w-full rounded border p-2 focus:ring-2 focus:outline-none"
-            value={formik.values.notes}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            rows={4}
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="bg-primary hover:bg-primary/90 w-full rounded py-2 text-white transition-colors"
+      <div>
+        <label htmlFor="difficulty" className="text-foreground mb-2 block text-sm font-medium">
+          Difficulty
+        </label>
+        <select
+          id="difficulty"
+          value={difficulty}
+          onChange={e => {
+            setDifficulty(e.target.value as QuestionDifficulty);
+          }}
+          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
         >
-          Add Question
-        </button>
-      </form>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="category" className="text-foreground mb-2 block text-sm font-medium">
+          Category (Optional)
+        </label>
+        <select
+          id="category"
+          value={categoryId ?? ''}
+          onChange={e => {
+            setCategoryId(e.target.value ? Number(e.target.value) : null);
+          }}
+          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
+        >
+          <option value="">Select a category</option>
+          {categories?.map(category => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="notes" className="text-foreground mb-2 block text-sm font-medium">
+          Notes (Optional)
+        </label>
+        <textarea
+          id="notes"
+          value={notes}
+          onChange={e => {
+            setNotes(e.target.value);
+          }}
+          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
+          rows={4}
+          placeholder="Add any notes or hints about the question..."
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-white transition-colors"
+      >
+        <Plus size={16} /> Add Question
+      </button>
+    </form>
+  );
+};
+
+const AddQuestionPage = () => {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/dashboard/leetcode"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+            >
+              <ArrowLeft size={16} /> Back to Questions
+            </Link>
+            <h1 className="text-foreground text-2xl font-bold">Add New Question</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-2xl">
+        <div className="bg-card rounded-lg border p-6">
+          <QuestionForm />
+        </div>
+      </div>
     </div>
   );
 };
 
-export default LeetCodeAddPage;
+export default AddQuestionPage;

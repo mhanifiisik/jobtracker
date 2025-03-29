@@ -1,9 +1,11 @@
-export default function Spinner({ className = '' }: { className?: string }) {
+export default function Spinner() {
   return (
-    <div
-      className={`text-primary inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] ${className}`}
-      role="status"
-      aria-label="Loading"
-    />
-  )
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="relative flex flex-col items-center justify-center gap-4 text-xl font-bold text-primary uppercase">
+        <div className="absolute h-24 w-24 animate-[spin_1.5s_linear_infinite_reverse] rounded-full border-8 border-t-primary border-r-transparent border-b-primary border-l-transparent"></div>
+
+        <div className="absolute h-20 w-20 animate-spin rounded-full border-8 border-t-primary border-r-transparent border-b-primary border-l-transparent"></div>
+      </div>
+    </div>
+  );
 }

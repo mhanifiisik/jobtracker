@@ -10,11 +10,7 @@ import {
 } from '@supabase-cache-helpers/postgrest-react-query';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-export const useMutateData = <T extends TableNames>(
-  table: T,
-  type: MutationType = MutationType.INSERT
-) => {
+export const useMutateData = (table: TableNames, type: MutationType = MutationType.INSERT) => {
   const insertMutation = useInsertMutation(supabase.from(table), ['id'], '*', {
     onError: (error: PostgrestError) => handleError(error),
   });

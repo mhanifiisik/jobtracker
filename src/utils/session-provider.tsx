@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import type { ReactNode } from 'react';
 import supabase from './supabase';
-import Loader from '../components/loader';
 import { SessionContext } from './session-context';
+import Loader from '@/components/ui/loading';
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -22,15 +22,5 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const memoizedValue = useMemo(() => ({ session }), [session]);
 
-  return (
-    <SessionContext value={memoizedValue}>
-      {isLoading ? (
-        <div className="flex min-h-screen w-full items-center justify-center">
-          <Loader />
-        </div>
-      ) : (
-        children
-      )}
-    </SessionContext>
-  );
+  return <SessionContext value={memoizedValue}>{isLoading ? <Loader /> : children}</SessionContext>;
 };

@@ -1,14 +1,19 @@
 import { useCallback, useState } from 'react';
 import { useFormik } from 'formik';
-import { useNavigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import supabase from '@/utils/supabase';
 import toast from 'react-hot-toast';
 import { handleError } from '@/utils/error-handler';
 import { signInSchema, signUpSchema } from '@/schemas/user-schemas';
+import { useSession } from '@/hooks/use-session';
+import { useTheme } from '@/utils/theme-provider';
+import { Moon, Sun } from 'lucide-react';
 
 const AuthPage = () => {
   const [isSignIn, setIsSignIn] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const signInFormik = useFormik({
     initialValues: {
@@ -18,6 +23,7 @@ const AuthPage = () => {
     validationSchema: signInSchema,
     onSubmit: async values => {
       try {
+        setIsLoading(true);
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
           password: values.password,
@@ -30,6 +36,8 @@ const AuthPage = () => {
         }
       } catch (err) {
         handleError(err);
+      } finally {
+        setIsLoading(false);
       }
     },
   });
@@ -39,10 +47,12 @@ const AuthPage = () => {
       username: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
     validationSchema: signUpSchema,
     onSubmit: async values => {
       try {
+        setIsLoading(true);
         const { error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
@@ -61,6 +71,8 @@ const AuthPage = () => {
         }
       } catch (err) {
         handleError(err);
+      } finally {
+        setIsLoading(false);
       }
     },
   });
@@ -84,7 +96,7 @@ const AuthPage = () => {
 
   const signInWithGithub = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: 'github',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
       },
@@ -96,9 +108,20 @@ const AuthPage = () => {
   }, []);
 
   const currentFormik = isSignIn ? signInFormik : signUpFormik;
-
+  const { session } = useSession();
+  if (session) {
+    return <Navigate to="/dashboard" />;
+  }
   return (
     <div className="flex min-h-screen w-full items-center justify-center">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 rounded-full bg-gray-200 p-2 dark:bg-gray-700"
+        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? <Sun /> : <Moon />}
+      </button>
       <div className="relative flex w-full flex-col items-center justify-center rounded p-8 md:w-1/2">
         <div className="mx-auto w-full max-w-sm">
           <h1 className="mb-4 text-center text-3xl font-bold text-gray-900">
@@ -181,6 +204,7 @@ const AuthPage = () => {
                 value={currentFormik.values.email}
                 onChange={currentFormik.handleChange}
                 onBlur={currentFormik.handleBlur}
+                disabled={isLoading}
               />
               {currentFormik.touched.email && currentFormik.errors.email && (
                 <p className="mt-1 text-sm text-red-500">{currentFormik.errors.email}</p>
@@ -200,17 +224,71 @@ const AuthPage = () => {
                 value={currentFormik.values.password}
                 onChange={currentFormik.handleChange}
                 onBlur={currentFormik.handleBlur}
+                disabled={isLoading}
               />
               {currentFormik.touched.password && currentFormik.errors.password && (
                 <p className="mt-1 text-sm text-red-500">{currentFormik.errors.password}</p>
               )}
             </div>
 
+            {!isSignIn && (
+              <div className="mb-6">
+                <label
+                  htmlFor="confirmPassword"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  value={signUpFormik.values.confirmPassword}
+                  onChange={signUpFormik.handleChange}
+                  onBlur={signUpFormik.handleBlur}
+                  disabled={isLoading}
+                />
+                {signUpFormik.touched.confirmPassword && signUpFormik.errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-500">{signUpFormik.errors.confirmPassword}</p>
+                )}
+              </div>
+            )}
+
+            {isSignIn && (
+              <div className="mb-6 text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      const { error } = await supabase.auth.resetPasswordForEmail(
+                        signInFormik.values.email,
+                        {
+                          redirectTo: `${window.location.origin}/auth/reset-password`,
+                        }
+                      );
+                      if (error) {
+                        handleError(error);
+                      } else {
+                        toast.success('Password reset link sent to your email');
+                      }
+                    })();
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                  disabled={isLoading || !signInFormik.values.email}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-md border border-gray-300 px-4 py-3 font-medium hover:cursor-pointer hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full rounded-md border border-gray-300 px-4 py-3 font-medium hover:cursor-pointer hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isLoading}
             >
-              {isSignIn ? 'SignIn' : 'SignUp'}
+              {isLoading ? 'Processing...' : isSignIn ? 'Sign In' : 'Sign Up'}
             </button>
           </form>
 

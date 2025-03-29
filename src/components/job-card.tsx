@@ -1,81 +1,45 @@
-import type { JobListing } from '@/types/job-listing';
 import { formatDate } from '@/utils/format-date';
-import { getStatusColor } from '@/utils/job-status-color';
-import { JobStatusLabels } from '@/utils/job-status-mapper';
-import { Building, Calendar, Clock, ExternalLink, MapPin, Trash2 } from 'lucide-react';
+import { Building, ExternalLink } from 'lucide-react';
+import Card from './ui/card';
+import { type Tables } from '@/types/db-tables';
+import { JobStatusForm } from './ui/job-status-form';
 
 interface JobCardProps {
-  job: JobListing;
-  onDelete?: (id: number) => void;
+  job: Tables['jobs']['Row'];
+  onDelete: () => void;
 }
 
-export const JobCard = ({ job, onDelete }: JobCardProps) => {
+export default function JobCard({ job, onDelete }: JobCardProps) {
+  const formattedDate = job.created_at ? formatDate(new Date(job.created_at)) : '';
+
   return (
-    <div
-      key={job.id}
-      className="group border-border bg-card overflow-hidden rounded-lg border transition-all duration-200 hover:shadow-md"
+    <Card
+      title={job.position}
+      subtitle={job.company}
+      description={job.description ?? ''}
+      icon={Building}
+      status={{
+        label: job.status ?? '',
+        color: 'bg-blue-500',
+      }}
+      date={formattedDate}
+      location={job.location ?? ''}
+      onDelete={onDelete}
     >
-      <div className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold">
-              {job.company.split('').slice(0, 2).join('').toUpperCase()}
-            </div>
-            <div>
-              <h3 className="text-foreground text-lg font-medium">{job.company}</h3>
-              <p className="text-muted-foreground text-sm">{job.position}</p>
-            </div>
-          </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(job.status)}`}
+      <div className="space-y-4">
+        {job.source_url && (
+          <a
+            href={job.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-sm"
           >
-            {JobStatusLabels[job.status]}
-          </span>
-        </div>
-
-        <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
-          {job.description || 'No description available.'}
-        </p>
-
-        <div className="text-muted-foreground grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span className="truncate">{job.location || 'Remote'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className="truncate">Applied: {formatDate(job.created_at)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="truncate">Posted: {formatDate(job.published_date)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            <span className="truncate">Updated: {formatDate(job.updated_at)}</span>
-          </div>
-        </div>
+            <ExternalLink className="h-4 w-4" />
+            View Job
+          </a>
+        )}
+        <JobStatusForm jobId={job.id.toString()} />
       </div>
-
-      <div className="divide-border border-border mt-4 flex divide-x border-t">
-        <button
-          type="button"
-          className="text-primary hover:bg-accent flex flex-1 items-center justify-center gap-2 p-3 text-sm font-medium transition-colors"
-        >
-          <ExternalLink className="h-4 w-4" />
-          View Details
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete?.(job.id)}
-          className="text-destructive hover:bg-destructive/10 flex flex-1 items-center justify-center gap-2 p-3 text-sm font-medium transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete
-        </button>
-      </div>
-    </div>
+    </Card>
   );
-};
-
-export default JobCard;
+}

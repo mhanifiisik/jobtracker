@@ -1,98 +1,81 @@
-import { useState } from 'react'
-import { useFetchData } from '@/hooks/use-fetch-data'
-import { useMutateData } from '@/hooks/use-mutate-data'
-import { QuestionDifficulty } from '@/constants/question-difficulty.enum'
-import { useSession } from '@/hooks/use-session'
-import type { Question } from '@/types/question'
-import type { UserQuestionProgress } from '@/types/user-question-progress'
-import { Plus, Search } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { Link } from 'react-router'
-import { MutationType } from '@/constants/mutation-type.enum'
+import { useState } from 'react';
+import { Link } from 'react-router';
+import { Plus, Search } from 'lucide-react';
+import type { Question, QuestionCategory, QuestionDifficulty } from '@/types/leetcode';
+import { useFetchData } from '@/hooks/use-fetch-data';
+import { useMutateData } from '@/hooks/use-mutate-data';
+import { useSession } from '@/hooks/use-session';
+import { QuestionCard } from '@/components/leetcode/question-card';
+import Loader from '@/components/ui/loading';
+import toast from 'react-hot-toast';
+import { MutationType } from '@/constants/mutation-type.enum';
 
-interface QuestionWithProgress extends Question {
-  user_question_progress?: UserQuestionProgress
-}
-
-interface Category {
-  id: number
-  name: string
-  user_id: string
-}
+const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
 const LeetCodePage = () => {
-  const { session } = useSession()
-  const userId = session?.user.id
-  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'ALL'>('ALL')
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
-  const [searchQuery, setSearchQuery] = useState('')
+  const { session } = useSession();
+  const userId = session?.user.id;
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: questions, isLoading } = useFetchData<'questions'>('questions', {
-    select: '*, user_question_progress(*)',
-    userId
-  }) as { data: QuestionWithProgress[] | null; isLoading: boolean }
+  const { data: questionsData, isLoading: isLoadingQuestions } = useFetchData('questions', {
+    select: '*, user_question_progress(*), question_categories(name)',
+    userId,
+  });
 
-  const { data: categories } = useFetchData('question_categories', {
-    userId
-  }) as { data: Category[] | null; isLoading: boolean }
+  const { data: categoriesData, isLoading: isLoadingCategories } = useFetchData('question_categories', {
+    userId,
+    orderBy: 'id',
+    order: 'asc',
+  });
 
-  const updateProgressMutation = useMutateData('user_question_progress', MutationType.UPSERT)
+  const questions = questionsData as Question[] | null;
+  const categories = categoriesData;
 
-  const handleQuestionSolved = async (questionId: number) => {
-    if (!userId) return
+  const { mutateAsync: updateProgress } = useMutateData('user_question_progress', MutationType.UPSERT);
 
-    const existingProgress = questions?.find((q) => q.id === questionId)?.user_question_progress
+  const handleMarkAsSolved = async (questionId: number) => {
+    if (!userId) return;
+
+    const existingProgress = questions?.find(q => q.id === questionId)?.user_question_progress;
 
     try {
-      await updateProgressMutation.mutateAsync({
+      await updateProgress({
         user_id: userId,
         question_id: questionId,
-        status: 'SOLVED',
+        status: 'solved',
         times_solved: (existingProgress?.times_solved ?? 0) + 1,
-        last_solved_at: new Date().toISOString()
-      })
-      toast.success('Question marked as solved!')
+        last_solved_at: new Date().toISOString(),
+      });
+      toast.success('Question marked as solved!');
     } catch (error) {
-      toast.error('Failed to update progress')
-      console.error(error)
+      toast.error('Failed to update progress');
+      console.error(error);
     }
-  }
+  };
 
-  const getDifficultyColor = (difficulty: QuestionDifficulty) => {
-    switch (difficulty) {
-      case QuestionDifficulty.Easy:
-        return 'bg-green-100 text-green-800'
-      case QuestionDifficulty.Medium:
-        return 'bg-yellow-100 text-yellow-800'
-      case QuestionDifficulty.Hard:
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'SOLVED':
-        return 'bg-green-100 text-green-800'
-      case 'ATTEMPTED':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'NOT_STARTED':
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center">Loading...</div>
+  if (isLoadingQuestions || isLoadingCategories) {
+    return <Loader />;
   }
 
   const filteredQuestions = questions?.filter(
-    (q) =>
+    q =>
       (selectedDifficulty === 'ALL' || q.difficulty === selectedDifficulty) &&
-      (selectedCategory === 'ALL' || q.category_id?.toString() === selectedCategory) &&
       q.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  );
+
+  const questionsByCategory = categories?.reduce((acc, category) => {
+    const categoryQuestions = filteredQuestions?.filter(q => q.category_id === category.id) ?? [];
+    if (categoryQuestions.length > 0) {
+      acc[category.id] = {
+        category,
+        questions: categoryQuestions,
+      };
+    }
+    return acc;
+  }, {} as Record<number, { category: QuestionCategory; questions: Question[] }>);
+
+  const uncategorizedQuestions = filteredQuestions?.filter(q => !q.category_id) ?? [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -115,8 +98,8 @@ const LeetCodePage = () => {
               placeholder="Search questions..."
               className="w-full border-none bg-transparent outline-none"
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
+              onChange={e => {
+                setSearchQuery(e.target.value);
               }}
             />
           </div>
@@ -126,7 +109,7 @@ const LeetCodePage = () => {
           <button
             type="button"
             onClick={() => {
-              setSelectedDifficulty('ALL')
+              setSelectedDifficulty('ALL');
             }}
             className={`rounded px-4 py-2 whitespace-nowrap ${
               selectedDifficulty === 'ALL' ? 'bg-primary text-white' : 'bg-card border'
@@ -134,12 +117,12 @@ const LeetCodePage = () => {
           >
             All Difficulties
           </button>
-          {Object.values(QuestionDifficulty).map((difficulty) => (
+          {DIFFICULTIES.map(difficulty => (
             <button
               key={difficulty}
               type="button"
               onClick={() => {
-                setSelectedDifficulty(difficulty)
+                setSelectedDifficulty(difficulty);
               }}
               className={`rounded px-4 py-2 whitespace-nowrap ${
                 selectedDifficulty === difficulty ? 'bg-primary text-white' : 'bg-card border'
@@ -150,43 +133,15 @@ const LeetCodePage = () => {
           ))}
         </div>
 
-        {categories && categories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-4">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCategory('ALL')
-              }}
-              className={`rounded px-4 py-2 whitespace-nowrap ${
-                selectedCategory === 'ALL' ? 'bg-secondary text-white' : 'bg-card border'
-              }`}
-            >
-              All Categories
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => {
-                  setSelectedCategory(category.id.toString())
-                }}
-                className={`rounded px-4 py-2 whitespace-nowrap ${
-                  selectedCategory === category.id.toString()
-                    ? 'bg-secondary text-white'
-                    : 'bg-card border'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-            <Link
-              to="/dashboard/leetcode/categories"
-              className="bg-card hover:bg-muted flex items-center gap-1 rounded border px-4 py-2 whitespace-nowrap"
-            >
-              <Plus size={14} /> Manage Categories
-            </Link>
-          </div>
-        )}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-foreground text-xl font-semibold">Learning Path</h2>
+          <Link
+            to="/dashboard/leetcode/categories"
+            className="bg-card hover:bg-muted flex items-center gap-1 rounded border px-4 py-2"
+          >
+            <Plus size={14} /> Manage Categories
+          </Link>
+        </div>
       </div>
 
       {!filteredQuestions || filteredQuestions.length === 0 ? (
@@ -195,62 +150,55 @@ const LeetCodePage = () => {
           <p className="text-muted-foreground text-sm">Add your first question to start tracking</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredQuestions.map((question) => (
-            <div
-              key={question.id}
-              className="border-border bg-card rounded-lg border p-4 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <h3 className="text-foreground mb-2 text-lg font-semibold">{question.title}</h3>
-              <div className="mb-4 flex flex-wrap gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${getDifficultyColor(question.difficulty)}`}
-                >
-                  {question.difficulty}
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(question.user_question_progress?.status)}`}
-                >
-                  {question.user_question_progress?.status ?? 'NOT_STARTED'}
-                </span>
-                {question.category_name && (
-                  <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800">
-                    {question.category_name}
-                  </span>
-                )}
-              </div>
+        <div className="space-y-8">
+          {categories?.map(category => {
+            const categoryData = questionsByCategory?.[category.id];
+            if (!categoryData) return null;
 
-              <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
-                <span>Solved: {question.user_question_progress?.times_solved ?? 0} times</span>
-                {question.user_question_progress?.last_solved_at && (
-                  <span>
-                    Last:{' '}
-                    {new Date(question.user_question_progress.last_solved_at).toLocaleDateString()}
-                  </span>
-                )}
+            return (
+              <div key={category.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-foreground text-lg font-semibold">{category.name}</h3>
+                  <div className="text-muted-foreground text-sm">
+                    {categoryData.questions.length} questions
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {categoryData.questions.map(question => (
+                    <QuestionCard
+                      key={question.id}
+                      question={question}
+                      onMarkAsSolved={handleMarkAsSolved}
+                    />
+                  ))}
+                </div>
               </div>
+            );
+          })}
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuestionSolved(question.id)}
-                  className="bg-primary hover:bg-primary/90 flex-1 rounded py-2 text-white transition-colors"
-                >
-                  Mark as Solved
-                </button>
-                <Link
-                  to={`/dashboard/leetcode/${String(question.id)}`}
-                  className="bg-muted hover:bg-muted/80 rounded px-3 py-2 transition-colors"
-                >
-                  Details
-                </Link>
+          {uncategorizedQuestions.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-foreground text-lg font-semibold">Uncategorized</h3>
+                <div className="text-muted-foreground text-sm">
+                  {uncategorizedQuestions.length} questions
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {uncategorizedQuestions.map(question => (
+                  <QuestionCard
+                    key={question.id}
+                    question={question}
+                    onMarkAsSolved={handleMarkAsSolved}
+                  />
+                ))}
               </div>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default LeetCodePage
+export default LeetCodePage;

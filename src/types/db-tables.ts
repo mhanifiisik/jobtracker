@@ -1,17 +1,9 @@
-import type { Application } from './application';
-import type { Document } from './document';
-import type { JobListing } from './job-listing';
-import type { Question } from './question';
-import type { QuestionCategory } from './question-category';
-import type { UserQuestionProgress } from './user-question-progress';
+import type { Database } from './database';
 
-export interface Tables {
-  jobs: JobListing;
-  job_applications: Application;
-  documents: Document;
-  questions: Question;
-  user_question_progress: UserQuestionProgress;
-  question_categories: QuestionCategory;
-}
+export type Tables = Database['public']['Tables'];
 
 export type TableNames = keyof Tables;
+
+export type TableRow<T extends TableNames> = Tables[T]['Row'];
+export type TableInsert<T extends TableNames> = Tables[T]['Insert'];
+export type TableUpdate<T extends TableNames> = Tables[T]['Update'];

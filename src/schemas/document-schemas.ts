@@ -1,15 +1,14 @@
 import { DOCUMENT_TYPES } from '@/constants/document-types';
-import * as yup from 'yup';
+import { object, string, type InferType } from 'yup';
 
-export const documentSchema = yup.object({
-  user_id: yup.string().required('User ID is required'),
-  title: yup.string().required('Document title is required'),
-  content: yup.string().optional(),
-  doc_type: yup
-    .string()
+export const documentSchema = object({
+  user_id: string().required('User ID is required'),
+  title: string().required('Document title is required'),
+  content: string().optional(),
+  doc_type: string()
     .oneOf(Object.values(DOCUMENT_TYPES), 'Please select a valid document type')
     .required('Document type is required'),
-  url: yup.string().url('Please enter a valid URL').optional(),
+  url: string().url('Please enter a valid URL').optional(),
 });
 
-export type DocumentFormValues = yup.InferType<typeof documentSchema>;
+export type DocumentFormValues = InferType<typeof documentSchema>;

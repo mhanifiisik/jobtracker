@@ -1,32 +1,30 @@
-import * as yup from 'yup';
+import { string, date, object, number, type InferType } from 'yup';
 
-export const questionSchema = yup.object({
-  title: yup.string().required('Question title is required'),
-  difficulty: yup
-    .string()
+export const questionSchema = object({
+  title: string().required('Question title is required'),
+  difficulty: string()
     .oneOf(['easy', 'medium', 'hard'] as const, 'Please select a valid difficulty level')
     .required('Difficulty level is required'),
-  category_id: yup.number().nullable().optional(),
-  url: yup.string().url('Please enter a valid URL').optional(),
-  notes: yup.string().optional(),
+  category_id: number().nullable().optional(),
+  url: string().url('Please enter a valid URL').optional(),
+  notes: string().optional(),
 });
 
-export const questionCategorySchema = yup.object({
-  name: yup.string().required('Category name is required'),
-  user_id: yup.string().required('User ID is required'),
+export const questionCategorySchema = object({
+  name: string().required('Category name is required'),
+  user_id: string().required('User ID is required'),
 });
 
-export const questionProgressSchema = yup.object({
-  user_id: yup.string().required('User ID is required'),
-  question_id: yup.number().required('Question ID is required'),
-  status: yup
-    .string()
+export const questionProgressSchema = object({
+  user_id: string().required('User ID is required'),
+  question_id: number().required('Question ID is required'),
+  status: string()
     .oneOf(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] as const, 'Please select a valid status')
     .required('Status is required'),
-  times_solved: yup.number().min(0, 'Times solved cannot be negative').optional(),
-  last_solved_at: yup.date().optional(),
+  times_solved: number().min(0, 'Times solved cannot be negative').optional(),
+  last_solved_at: date().optional(),
 });
 
-export type QuestionFormValues = yup.InferType<typeof questionSchema>;
-export type QuestionCategoryFormValues = yup.InferType<typeof questionCategorySchema>;
-export type QuestionProgressFormValues = yup.InferType<typeof questionProgressSchema>;
+export type QuestionFormValues = InferType<typeof questionSchema>;
+export type QuestionCategoryFormValues = InferType<typeof questionCategorySchema>;
+export type QuestionProgressFormValues = InferType<typeof questionProgressSchema>;

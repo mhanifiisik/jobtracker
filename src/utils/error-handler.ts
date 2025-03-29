@@ -1,8 +1,8 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 import type { AppError } from '@/types/errors';
-import { ErrorType } from '@/types/errors';
 import { ERROR_MESSAGES } from '@/constants/error-messages';
+import { ErrorType } from '@/constants/error-type.enum';
 
 function isPostgrestError(error: unknown): error is PostgrestError {
   return error instanceof Object && 'code' in error && 'message' in error && 'details' in error;
