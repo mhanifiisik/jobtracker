@@ -6,14 +6,14 @@ import toast from 'react-hot-toast';
 import { handleError } from '@/utils/error-handler';
 import { signInSchema, signUpSchema } from '@/schemas/user-schemas';
 import { useSession } from '@/hooks/use-session';
-import { useTheme } from '@/utils/theme-provider';
 import { Moon, Sun } from 'lucide-react';
+import useTheme from '@/hooks/use-theme';
 
 const AuthPage = () => {
   const [isSignIn, setIsSignIn] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, handleThemeChange } = useTheme();
 
   const signInFormik = useFormik({
     initialValues: {
@@ -116,7 +116,7 @@ const AuthPage = () => {
     <div className="flex min-h-screen w-full items-center justify-center">
       <button
         type="button"
-        onClick={toggleTheme}
+        onClick={() =>{ handleThemeChange(theme === 'light' ? 'dark' : 'light')}}
         className="absolute top-4 right-4 rounded-full bg-gray-200 p-2 dark:bg-gray-700"
         aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
       >

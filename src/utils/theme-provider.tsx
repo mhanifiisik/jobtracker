@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useState,
-  useEffect,
-  type ReactNode,
-  useMemo,
-  useCallback,
-} from 'react';
+import { createContext, useState, useEffect, type ReactNode, useMemo, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -16,8 +9,6 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-
 
 interface ThemeProviderProps {
   children: ReactNode;

@@ -14,9 +14,6 @@ const NotFoundPage = lazy(() => import('./pages/not-found'));
 const PageLayout = lazy(() => import('./components/layout'));
 const DashboardPage = lazy(() => import('./pages/dashboard'));
 const LeetCodePage = lazy(() => import('./pages/dashboard/leetcode'));
-const LeetCodeAddPage = lazy(() => import('./pages/dashboard/leetcode/add'));
-const QuestionDetailPage = lazy(() => import('./pages/dashboard/leetcode/[id]'));
-const CategoriesPage = lazy(() => import('./pages/dashboard/leetcode/categories'));
 const Applications = lazy(() => import('./pages/dashboard/applications'));
 const DocumentsPage = lazy(() => import('./pages/dashboard/documents'));
 const JobsPage = lazy(() => import('./pages/dashboard/jobs'));
@@ -35,12 +32,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="*" element={<NotFoundPage />} />
             <Route path="dashboard" element={<PageLayout />}>
               <Route index element={<DashboardPage />} />
-              <Route path="leetcode">
-                <Route index element={<LeetCodePage />} />
-                <Route path="add" element={<LeetCodeAddPage />} />
-                <Route path="categories" element={<CategoriesPage />} />
-                <Route path=":id" element={<QuestionDetailPage />} />
-              </Route>
+              <Route path="leetcode" element={<LeetCodePage />} />
               <Route path="applications" element={<Applications />} />
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="jobs" element={<JobsPage />} />
