@@ -2,9 +2,7 @@ import { string, date, object, number, type InferType } from 'yup';
 
 export const questionSchema = object({
   title: string().required('Question title is required'),
-  difficulty: string()
-    .oneOf(['easy', 'medium', 'hard'] as const, 'Please select a valid difficulty level')
-    .required('Difficulty level is required'),
+  difficulty: string().oneOf(['easy', 'medium', 'hard']).required('Difficulty is required'),
   category_id: number().nullable().optional(),
   url: string().url('Please enter a valid URL').optional(),
   notes: string().optional(),

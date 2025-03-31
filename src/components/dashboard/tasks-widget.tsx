@@ -1,30 +1,19 @@
 import { useMemo } from 'react';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useSession } from '@/hooks/use-session';
 import { Plus, Trash2 } from 'lucide-react';
-import type { Database } from '@/types/database';
-
-type Task = Database['public']['Tables']['tasks']['Row'];
+import { useTasksStore } from '@/store/tasks';
+import type { TableRow } from '@/types/db-tables';
 
 interface GroupedTasks {
-  pending: Task[];
-  inProgress: Task[];
-  completed: Task[];
+  pending: TableRow<'tasks'>[];
+  inProgress: TableRow<'tasks'>[];
+  completed: TableRow<'tasks'>[];
 }
 
 export default function TasksWidget() {
-  const { session } = useSession();
-  const userId = session?.user.id;
 
-  const { data: tasks } = useFetchData('tasks', {
-    userId,
-    select: 'id,task_name,status,created_at',
-    order: 'desc',
-    limit: 5,
-  });
+  const { tasks } = useTasksStore();
 
   const groupedTasks = useMemo(() => {
-    if (!tasks) return null;
 
     return {
       pending: tasks.filter(t => t.status === 'pending'),
@@ -46,10 +35,9 @@ export default function TasksWidget() {
         </button>
       </div>
       <div className="p-4">
-        {groupedTasks ? (
-          <div className="space-y-4">
-            {groupedTasks.pending.length > 0 && (
-              <div>
+        <div className="space-y-4">
+          {groupedTasks.pending.length > 0 && (
+            <div>
                 <h4 className="text-muted-foreground mb-2 text-sm font-medium">Pending</h4>
                 <div className="space-y-2">
                   {groupedTasks.pending.map(task => (
@@ -123,15 +111,12 @@ export default function TasksWidget() {
               </div>
             )}
 
-            {tasks?.length === 0 && (
+            {tasks.length === 0 && (
               <div className="text-muted-foreground text-center">
                 No tasks yet. Add your first task to get started.
               </div>
             )}
-          </div>
-        ) : (
-          <div className="text-muted-foreground text-center">Loading tasks...</div>
-        )}
+        </div>
       </div>
     </div>
   );

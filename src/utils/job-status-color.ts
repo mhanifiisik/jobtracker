@@ -1,19 +1,23 @@
-import { JobStatus } from '../constants/job-status.enum';
+import type { Tables } from '@/types/db-tables';
 
-export const getStatusColor = (status: JobStatus): string => {
+export const getStatusColor = (status: Tables['jobs']['Row']['status']): string => {
   switch (status) {
-    case JobStatus.New:
+    case 'new':
       return 'bg-primary text-primary-dark';
-    case JobStatus.ReadyForReview:
+    case 'applied':
       return 'bg-warning text-warning-dark';
-    case JobStatus.Applied:
+    case 'saved':
       return 'bg-info text-info-dark';
-    case JobStatus.InInterview:
+    case 'interviewing':
       return 'bg-secondary text-secondary-dark';
-    case JobStatus.OnWishlist:
+    case 'offered':
       return 'bg-success text-success-dark';
-    case JobStatus.Rejected:
+    case 'rejected':
       return 'bg-danger text-danger-dark';
+    case 'archived':
+      return 'bg-muted text-muted-dark';
+    case 'withdrawn':
+      return 'bg-muted text-muted-dark';
     default:
       return 'bg-muted text-muted-dark';
   }

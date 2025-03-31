@@ -1,49 +1,42 @@
-import { useCallback, useState, useMemo } from 'react';
-import { useSession } from '@/hooks/use-session';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useMutateData } from '@/hooks/use-mutate-data';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { Search, Trash, LayoutGrid, Table as TableIcon } from 'lucide-react';
-import { MutationType } from '@/constants/mutation-type.enum';
 import Table from '@/components/ui/table';
+import { useApplicationsStore } from '@/store/applications';
+import type { Tables } from '@/types/database';
+
+type JobApplication = Tables<'job_applications'>;
 
 const ITEMS_PER_PAGE = 10;
 const STATUS_OPTIONS = [
+  { value: 'new', label: 'New' },
   { value: 'applied', label: 'Applied' },
-  { value: 'in interview', label: 'In Interview' },
-  { value: 'offer', label: 'Offer' },
+  { value: 'interviewing', label: 'Interviewing' },
+  { value: 'offered', label: 'Offered' },
   { value: 'rejected', label: 'Rejected' },
-  { value: 'wishlist', label: 'Wishlist' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+  { value: 'archived', label: 'Archived' },
 ] as const;
 
 export default function Applications() {
-  const { session } = useSession();
   const [view, setView] = useState<'grid' | 'table'>('table');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: applications, isLoading } = useFetchData('job_applications', {
-    userId: session?.user.id,
-    orderBy: 'updated_at',
-    order: 'desc',
-    limit: ITEMS_PER_PAGE,
-    offset: (currentPage - 1) * ITEMS_PER_PAGE,
-    range: {
-      from: (currentPage - 1) * ITEMS_PER_PAGE,
-      to: currentPage * ITEMS_PER_PAGE,
-    },
-  });
 
-  const { mutateAsync: deleteApplication } = useMutateData('job_applications', MutationType.DELETE);
-  const { mutateAsync: updateApplication } = useMutateData('job_applications', MutationType.UPDATE);
+  const { applications,isLoading, fetchApplications,updateApplication,deleteApplication } = useApplicationsStore();
+
+  useEffect(() => {
+    void fetchApplications();
+  }, [fetchApplications]);
+
+
+
 
   const handleDelete = useCallback(
     async (id: number) => {
-      if (!id) {
-        return;
-      }
       try {
-        await deleteApplication({ id });
+        await deleteApplication(id);
       } catch (error) {
         console.error('Failed to delete application:', error);
       }
@@ -52,16 +45,14 @@ export default function Applications() {
   );
 
   const handleStatusChange = useCallback(
-    async (id: number, newStatus: string) => {
-      await updateApplication({ id, status: newStatus });
+    async (id: number, newStatus: Tables<'job_applications'>['status']) => {
+      await updateApplication(id, { status: newStatus });
     },
     [updateApplication]
   );
 
-  const filteredApplications = useMemo(() => {
-    if (!applications) return [];
-
-    return applications.filter(app => {
+  const filteredApplications : Tables<'job_applications'>[] = useMemo(() => {
+      return applications.filter(app => {
       const matchesSearch = search.toLowerCase() === ''
         || app.company_name.toLowerCase().includes(search.toLowerCase())
         || app.position_title.toLowerCase().includes(search.toLowerCase())
@@ -97,7 +88,7 @@ export default function Applications() {
     });
   };
 
-  const tableActions = (application: any) => {
+  const tableActions = (application: Tables<'job_applications'>) => {
     return (
       <div className="flex gap-2">
         <button
@@ -122,7 +113,7 @@ export default function Applications() {
         <div className="border-muted bg-background flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground mb-4 text-lg">Loading applications...</p>
         </div>
-      ) : !applications || applications.length === 0 ? (
+      ) : applications.length === 0 ? (
         <div className="border-muted bg-background flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground mb-4 text-lg">No applications found</p>
           <p className="text-muted-foreground text-sm">
@@ -186,19 +177,24 @@ export default function Applications() {
           </div>
 
           {view === 'table' ? (
-            <Table
+            <Table<JobApplication>
               columns={['Company', 'Position', 'Location', 'Date Applied', 'Status']}
-              data={filteredApplications.map(app => ({
+              data={paginatedApplications}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              actions={tableActions}
+              renderRow={(app) => ({
                 Company: app.company_name,
                 Position: app.position_title,
                 Location: app.location,
-                'Date Applied': app.updated_at ? new Date(app.updated_at).toLocaleDateString() : 'N/A',
+                'Date Applied': app.date_applied ? new Date(app.date_applied).toLocaleDateString() : 'N/A',
                 Status: (
                   <select
                     className="bg-transparent border border-border rounded px-2 py-1"
                     value={app.status}
                     onChange={(e) => {
-                      void handleStatusChange(app.id, e.target.value);
+                      void handleStatusChange(app.id, e.target.value as JobApplication['status']);
                     }}
                   >
                     {STATUS_OPTIONS.map(option => (
@@ -208,11 +204,7 @@ export default function Applications() {
                     ))}
                   </select>
                 ),
-              }))}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              actions={tableActions}
+              })}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -238,7 +230,7 @@ export default function Applications() {
                         className="bg-transparent border border-border rounded px-2 py-1 text-sm w-full"
                         value={application.status}
                         onChange={(e) => {
-                          void handleStatusChange(application.id, e.target.value);
+                          void handleStatusChange(application.id, e.target.value as JobApplication['status']);
                         }}
                       >
                         {STATUS_OPTIONS.map(option => (

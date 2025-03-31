@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TableProps<T> {
@@ -9,7 +9,8 @@ interface TableProps<T> {
     currentPage: number;
     totalPages: number;
     onPageChange: (direction: 'prev' | 'next') => void;
-    actions?: (row: T) => ReactElement;
+    actions?: (item: T) => ReactNode;
+    renderRow: (item: T) => Record<string, ReactNode>;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -21,7 +22,8 @@ function Table<T>({
     currentPage,
     totalPages,
     onPageChange,
-    actions
+    actions,
+    renderRow
 }: TableProps<T>) {
     const paginatedData = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -52,7 +54,7 @@ function Table<T>({
                             </td>
                             {columns.map((column) => (
                                 <td key={column} className="border-b border-border p-4 text-sm">
-                                    {row[column as keyof T] as React.ReactNode}
+                                    {renderRow(row)[column]}
                                 </td>
                             ))}
                             {actions && (

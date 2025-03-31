@@ -1,10 +1,12 @@
-import { JobStatus } from '../constants/job-status.enum';
+import type { Tables } from '@/types/database';
 
-export const JobStatusLabels: Record<JobStatus, string> = {
-  [JobStatus.New]: 'New',
-  [JobStatus.Applied]: 'Applied',
-  [JobStatus.InInterview]: 'In Interview',
-  [JobStatus.OnWishlist]: 'On Wishlist',
-  [JobStatus.Rejected]: 'Rejected',
-  [JobStatus.ReadyForReview]: 'Ready for Review',
+export const JobStatusLabels: Record<NonNullable<Tables<'jobs'>['status']>, string> = {
+  new: 'New',
+  applied: 'Applied',
+  saved: 'Saved',
+  interviewing: 'Interviewing',
+  offered: 'Offered',
+  rejected: 'Rejected',
+  archived: 'Archived',
+  withdrawn: 'Withdrawn',
 };

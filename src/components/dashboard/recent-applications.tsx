@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { MapPin, Building2 } from 'lucide-react';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useSession } from '@/hooks/use-session';
-import type { Database } from '@/types/database';
+import type { Tables } from '@/types/database';
+import { useApplicationsStore } from '@/store/applications';
 
-type JobApplication = Database['public']['Tables']['job_applications']['Row'];
+type JobApplication = Tables<'job_applications'>;
 type JobStatus = JobApplication['status'];
 
 interface ApplicationDisplay {
@@ -18,20 +17,17 @@ interface ApplicationDisplay {
 }
 
 function RecentApplications() {
-  const { session } = useSession();
-  const userId = session?.user.id;
 
-  const { data: applicationsData } = useFetchData('job_applications', {
-    userId,
-    select: 'id,company_name,position_title,location,status,date_applied',
-    order: 'desc',
-    limit: 5,
-  });
+  const { recentApplications,fetchRecentApplications: fetchRecentApplications} = useApplicationsStore();
+
+  useEffect(() => {
+    void fetchRecentApplications();
+  }, [fetchRecentApplications]);
 
   const applications = useMemo(() => {
-    if (!applicationsData) return [];
+    if (!recentApplications) return [];
 
-    return applicationsData.map(app => ({
+    return recentApplications.map(app => ({
       id: app.id,
       company_name: app.company_name,
       position: app.position_title,
@@ -39,22 +35,22 @@ function RecentApplications() {
       status: app.status,
       applied_date: app.date_applied,
     })) as ApplicationDisplay[];
-  }, [applicationsData]);
+  }, [recentApplications]);
 
-  const getStatusColor = (status: JobStatus) => {
+  const getStatusColor = (status: Tables<'job_applications'>['status']) => {
     switch (status) {
+      case 'interviewing':
+        return 'text-blue-500 bg-blue-100';
+      case 'saved':
+        return 'text-purple-500 bg-purple-100';
       case 'applied':
-        return 'bg-accent/20 text-accent-foreground dark:bg-accent/30';
+        return 'text-yellow-500 bg-yellow-100';
+      case 'offered':
+        return 'text-green-500 bg-green-100';
       case 'rejected':
-        return 'bg-destructive/20 text-destructive-foreground dark:bg-destructive/30';
-      case 'in interview':
-        return 'bg-primary/20 text-primary-foreground dark:bg-primary/30';
-      case 'on wishlist':
-        return 'bg-secondary/20 text-secondary-foreground dark:bg-secondary/30';
-      case 'ready for review':
-        return 'bg-muted text-muted-foreground dark:bg-muted/50';
+        return 'text-red-500 bg-red-100';
       default:
-        return 'bg-muted text-muted-foreground dark:bg-muted/50';
+        return 'text-gray-500 bg-gray-100';
     }
   };
 

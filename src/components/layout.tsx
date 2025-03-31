@@ -2,11 +2,11 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router';
 import Sidebar from './sidebar';
 import Loader from './ui/loading';
 import { Suspense } from 'react';
-import { useSession } from '@/hooks/use-session';
+import { useAuthStore } from '@/store/auth';
 import { ChevronRight, Home } from 'lucide-react';
 
 const PageLayout = () => {
-  const { session } = useSession();
+  const session = useAuthStore(state => state.session);
   const location = useLocation();
   const pathSegments = location.pathname.split('/').filter(segment => segment);
 

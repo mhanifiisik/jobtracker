@@ -1,26 +1,19 @@
-import { useCallback, useState, useMemo } from 'react';
-import { useSession } from '@/hooks/use-session';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useMutateData } from '@/hooks/use-mutate-data';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { Search, Trash, LayoutGrid, Table as TableIcon, Plus, Save, Upload,Eye } from 'lucide-react';
-import { MutationType } from '@/constants/mutation-type.enum';
 import Table from '@/components/ui/table';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Database } from '@/types/database';
-
+import { useAuthStore } from '@/store/auth';
+import { useDocumentsStore } from '@/store/documents';
 const ITEMS_PER_PAGE = 10;
 
 type Document = Database['public']['Tables']['documents']['Row'];
 
-interface TableDocument {
-  Title: string;
-  Content: React.ReactElement;
-  'Last Updated': string;
-}
+
 
 export default function Documents() {
-  const { session } = useSession();
+  const { user } = useAuthStore();
   const [view, setView] = useState<'grid' | 'table'>('table');
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,24 +22,12 @@ export default function Documents() {
     title: '',
     content: '',
     doc_type: 'markdown',
-    file_type: 'markdown',
   });
+  const { documents, isLoading, fetchDocuments, deleteDocument, createDocument, updateDocument } = useDocumentsStore();
 
-  const { data: documents, isLoading } = useFetchData('documents', {
-    userId: session?.user.id,
-    orderBy: 'updated_at',
-    order: 'desc',
-    limit: ITEMS_PER_PAGE,
-    offset: (currentPage - 1) * ITEMS_PER_PAGE,
-    range: {
-      from: (currentPage - 1) * ITEMS_PER_PAGE,
-      to: currentPage * ITEMS_PER_PAGE,
-    },
-  });
-
-  const { mutateAsync: deleteDocument } = useMutateData('documents', MutationType.DELETE);
-  const { mutateAsync: createDocument } = useMutateData('documents', MutationType.INSERT);
-  const { mutateAsync: updateDocument } = useMutateData('documents', MutationType.UPDATE);
+useEffect(() => {
+  void fetchDocuments();
+}, [fetchDocuments]);
 
   const handleDelete = useCallback(
     async (id: number) => {
@@ -54,7 +35,7 @@ export default function Documents() {
         return;
       }
       try {
-        await deleteDocument({ id });
+        await deleteDocument(id);
       } catch (error) {
         console.error('Failed to delete document:', error);
       }
@@ -66,17 +47,16 @@ export default function Documents() {
     async () => {
       try {
         if (currentDocument.id) {
-          await updateDocument({
-            id: currentDocument.id,
+          await updateDocument(currentDocument.id, {
             title: currentDocument.title,
             content: currentDocument.content,
             doc_type: 'markdown',
           });
         } else {
           await createDocument({
-            title: currentDocument.title,
-            content: currentDocument.content,
-            user_id: session?.user.id,
+            title: currentDocument.title ?? '',
+            content: currentDocument.content ?? '',
+            user_id: user?.id ?? '',
             doc_type: 'markdown',
           });
         }
@@ -90,7 +70,7 @@ export default function Documents() {
         console.error('Failed to save document:', error);
       }
     },
-    [currentDocument, createDocument, updateDocument, session?.user.id]
+    [currentDocument, createDocument, updateDocument, user?.id]
   );
 
   const handleEdit = useCallback((document: Document) => {
@@ -130,12 +110,10 @@ export default function Documents() {
   }, []);
 
   const filteredDocuments = useMemo(() => {
-    if (!documents) return [];
-
     return documents.filter(doc => {
       return search.toLowerCase() === ''
         || doc.title.toLowerCase().includes(search.toLowerCase())
-        || doc.content.toLowerCase().includes(search.toLowerCase());
+        || doc.content?.toLowerCase().includes(search.toLowerCase());
     });
   }, [documents, search]);
 
@@ -154,16 +132,13 @@ export default function Documents() {
     });
   };
 
-  const tableActions = (document: TableDocument): React.ReactElement => {
-    const originalDoc = filteredDocuments.find(doc => doc.title === document.Title);
-    if (!originalDoc) return <></>;
-
+  const tableActions = (document: Document) => {
     return (
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => {
-            handleEdit(originalDoc);
+            handleEdit(document);
           }}
           className="text-muted-foreground hover:text-primary"
         >
@@ -171,9 +146,7 @@ export default function Documents() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            void handleDelete(originalDoc.id);
-          }}
+          onClick={() => void handleDelete(document.id)}
           className="text-muted-foreground hover:text-destructive"
         >
           <Trash className="w-4 h-4" />
@@ -267,7 +240,7 @@ export default function Documents() {
                 />
                 <textarea
                   placeholder="Write your markdown content here..."
-                  value={currentDocument.content}
+                  value={currentDocument.content ?? ''}
                   onChange={(e) => {
                     setCurrentDocument(prev => ({
                       ...prev,
@@ -309,46 +282,33 @@ export default function Documents() {
               </div>
             </div>
           ) : view === 'table' ? (
-            <Table<TableDocument>
+            <Table<Document>
               columns={['Title', 'Content', 'Last Updated']}
-              data={filteredDocuments.map(doc => ({
-                Title: doc.title,
-                Content: (
-                  <div className="max-w-md truncate">
-                    {doc.content}
-                  </div>
-                ),
-                'Last Updated': doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : 'N/A',
-              }))}
+              data={filteredDocuments}
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
               actions={tableActions}
+              renderRow={(doc) => ({
+                Title: doc.title,
+                Content: <div className="line-clamp-2">{doc.content}</div>,
+                'Last Updated': doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : 'N/A',
+              })}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDocuments.map(doc => (
-                <div
-                  key={doc.id}
-                  className="bg-card border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-medium text-foreground">{doc.title}</h3>
-                    {tableActions({ Title: doc.title, Content: <></>, 'Last Updated': '' })}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {doc.content}
-                      </ReactMarkdown>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Last updated: {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Table<Document>
+              columns={['Title', 'Content', 'Last Updated']}
+              data={filteredDocuments}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              actions={tableActions}
+              renderRow={(doc) => ({
+                Title: doc.title,
+                Content: <div className="line-clamp-2">{doc.content}</div>,
+                'Last Updated': doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : 'N/A',
+              })}
+            />
           )}
         </div>
       )}

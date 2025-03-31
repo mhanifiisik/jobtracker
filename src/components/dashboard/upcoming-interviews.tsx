@@ -1,10 +1,10 @@
 import { format } from 'date-fns';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useSession } from '@/hooks/use-session';
 import { Video, Phone, Building2, Plus } from 'lucide-react';
-import type { Database } from '@/types/database';
+import type {  Tables } from '@/types/database';
+import { useInterviewsStore } from '@/store/interviews';
+import { useEffect } from 'react';
 
-type Interview = Database['public']['Tables']['interviews']['Row'];
+type Interview = Tables<'interviews'>;
 type InterviewType = Interview['interview_type'];
 
 const formatInterviewDate = (date: string) => {
@@ -23,27 +23,12 @@ const getInterviewTypeIcon = (type: InterviewType) => {
 };
 
 export default function UpcomingInterviews() {
-  const { session } = useSession();
-  const userId = session?.user.id;
 
-  const { data: interviewsData } = useFetchData('interviews', {
-    select: `id,
-      job_applications (company_name, position_title),
-      interview_date,
-      interview_type,
-      location,
-      status`,
-    userId,
-    orderBy: 'interview_date',
-    order: 'asc',
-    filters: [
-      {
-        column: 'interview_date',
-        value: new Date().toLocaleString(),
-        operator: 'gt',
-      },
-    ],
-  });
+  const { upcomingInterviews, fetchUpcomingInterviews } = useInterviewsStore();
+
+  useEffect(() => {
+    void fetchUpcomingInterviews();
+  }, [fetchUpcomingInterviews]);
 
   return (
     <div className="border-border overflow-hidden rounded-lg border bg-card">
@@ -55,23 +40,23 @@ export default function UpcomingInterviews() {
         Schedule New Interview
       </button>
       <div className="divide-border divide-y">
-        {interviewsData && interviewsData.length > 0 ? (
-          interviewsData.map(interview => (
+        {upcomingInterviews.length > 0 ? (
+          upcomingInterviews.map(interview => (
             <div
-              key={interview.id}
+              key={interview.interview_id}
               className="cursor-pointer p-4 transition-colors hover:bg-muted/50"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium text-foreground">
-                    {interview.job_applications?.company_name}
+                    {interview.company_name}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {interview.job_applications?.position_title}
+                    {interview.position_title}
                   </p>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2">
-                  {getInterviewTypeIcon(interview.interview_type)}
+                  {getInterviewTypeIcon(interview.interview_type as InterviewType)}
                   <span className="text-xs capitalize">
                     {interview.interview_type.toLowerCase()}
                   </span>

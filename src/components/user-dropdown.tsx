@@ -1,15 +1,17 @@
 import { LogOut, User } from 'lucide-react';
-import { useSession } from '@/hooks/use-session';
+import { useAuthStore } from '@/store/auth';
 import supabase from '@/utils/supabase';
 import { handleError } from '@/utils/error-handler';
-import Dropdown from './ui/dropdown';
+import { useState, useRef, useEffect } from 'react';
 
 interface UserDropdownProps {
   collapsed?: boolean;
 }
 
 export default function UserDropdown({ collapsed }: UserDropdownProps) {
-  const { session } = useSession();
+  const { user } = useAuthStore();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -27,29 +29,50 @@ export default function UserDropdown({ collapsed }: UserDropdownProps) {
     return email;
   };
 
-  const trigger = (
-    <div className="flex items-center gap-2">
-      <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-full">
-        <User className="h-4 w-4" />
-      </div>
-      {!collapsed && (
-        <span className="max-w-[150px] truncate text-sm">
-          {session?.user.email && truncateEmail(session.user.email)}
-        </span>
-      )}
-    </div>
-  );
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
-    <Dropdown trigger={trigger}>
+    <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        onClick={handleSignOut}
-        className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
+        onClick={() => {
+          setIsOpen(prev => !prev);
+        }}
+        className="flex items-center gap-2 focus:outline-none"
       >
-        <LogOut className="h-4 w-4" />
-        Sign Out
+        <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-full">
+          <User className="h-4 w-4" />
+        </div>
+        {!collapsed && (
+          <span className="max-w-[150px] truncate text-sm">
+            {user?.email && truncateEmail(user.email)}
+          </span>
+        )}
       </button>
-    </Dropdown>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,24 +1,23 @@
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useSession } from '@/hooks/use-session';
 import { Code, CheckCircle, ArrowRight } from 'lucide-react';
+import { useProgressStore } from '@/store/progress';
+import { useEffect } from 'react';
+import { useQuestionsStore } from '@/store/questions';
 
 export default function ProgressCard() {
-  const { session } = useSession();
 
-  const { data: questions } = useFetchData('questions', {
-    userId: session?.user.id,
-    orderBy: 'created_at',
-  });
-  const { data: questionProgress } = useFetchData('user_question_progress', {
-    userId: session?.user.id,
-    orderBy: 'created_at',
-  });
+  const { questions, fetchQuestions } = useQuestionsStore();
+  const { progress, fetchProgress } = useProgressStore();
 
-  const totalQuestions = questions?.length ?? 0;
+  useEffect(() => {
+    void fetchQuestions();
+    void fetchProgress();
+  }, [fetchQuestions, fetchProgress]);
+
+  const totalQuestions = questions.length;
   const solvedQuestions =
-    questionProgress?.filter(progress => progress.status === 'solved').length ?? 0;
+    progress.filter(progress => progress.status === 'solved').length;
   const attemptingQuestions =
-    questionProgress?.filter(progress => progress.status === 'attempted').length ?? 0;
+    progress.filter(progress => progress.status === 'attempted').length;
 
   const totalProgressPercentage =
     totalQuestions > 0 ? Math.round((solvedQuestions / totalQuestions) * 100) : 0;
@@ -28,14 +27,14 @@ export default function ProgressCard() {
     { name: 'Medium', textColor: 'text-chart-2 dark:text-chart-2/90' },
     { name: 'Hard', textColor: 'text-chart-3 dark:text-chart-3/90' },
   ].map(diff => {
-    const total = questions?.filter(q => q.difficulty === diff.name.toLowerCase()).length ?? 0;
+    const total = questions.filter(q => q.difficulty === diff.name.toLowerCase()).length;
     const solved =
-      questionProgress?.filter(
+      progress.filter(
         progress =>
           progress.status === 'solved' &&
-          questions?.find(q => q.id === progress.question_id)?.difficulty ===
+          questions.find(q => q.id === progress.question_id)?.difficulty ===
             diff.name.toLowerCase()
-      ).length ?? 0;
+      ).length;
 
     return {
       ...diff,

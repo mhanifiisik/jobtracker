@@ -5,7 +5,6 @@ export default function ThemeSwitcher() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    // Initialize theme from localStorage or system preference
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = savedTheme ?? (prefersDark ? 'dark' : 'light');
@@ -13,7 +12,6 @@ export default function ThemeSwitcher() {
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
 
-    // Add transition class to body for smooth transitions
     document.body.classList.add('theme-transition');
   }, []);
 

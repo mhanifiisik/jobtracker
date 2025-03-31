@@ -1,51 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { Plus, Search } from 'lucide-react';
-import type { Question, QuestionCategory, QuestionDifficulty } from '@/types/leetcode';
-import { useFetchData } from '@/hooks/use-fetch-data';
-import { useMutateData } from '@/hooks/use-mutate-data';
-import { useSession } from '@/hooks/use-session';
+import type {  QuestionDifficulty } from '@/types/leetcode';
 import { QuestionCard } from '@/components/leetcode/question-card';
-import Loader from '@/components/ui/loading';
 import toast from 'react-hot-toast';
-import { MutationType } from '@/constants/mutation-type.enum';
+import { useQuestionsStore } from '@/store/questions';
+import { useProgressStore } from '@/store/progress';
 
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
 const LeetCodePage = () => {
-  const { session } = useSession();
-  const userId = session?.user.id;
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const { data: questionsData, isLoading: isLoadingQuestions } = useFetchData('questions', {
-    select: '*, user_question_progress(*), question_categories(name)',
-    userId,
-  });
+  const { questions, categories, fetchQuestions, fetchCategories } = useQuestionsStore();
+  const { progress, updateProgress } = useProgressStore();
 
-  const { data: categoriesData, isLoading: isLoadingCategories } = useFetchData('question_categories', {
-    userId,
-    orderBy: 'id',
-    order: 'asc',
-  });
-
-  const questions = questionsData as Question[] | null;
-  const categories = categoriesData;
-
-  const { mutateAsync: updateProgress } = useMutateData('user_question_progress', MutationType.UPSERT);
+  useEffect(() => {
+    void fetchQuestions();
+    void fetchCategories();
+  }, [fetchQuestions, fetchCategories]);
 
   const handleMarkAsSolved = async (questionId: number) => {
-    if (!userId) return;
-
-    const existingProgress = questions?.find(q => q.id === questionId)?.user_question_progress;
+    const existingProgress = progress.find(p => p.question_id === questionId);
 
     try {
-      await updateProgress({
-        user_id: userId,
-        question_id: questionId,
+      await updateProgress(questionId, {
         status: 'solved',
-        times_solved: (existingProgress?.times_solved ?? 0) + 1,
-        last_solved_at: new Date().toISOString(),
+        times_solved: (existingProgress?.times_solved ?? 0) + 1, // Increment times solved
+        last_solved_at: new Date().toISOString()
       });
       toast.success('Question marked as solved!');
     } catch (error) {
@@ -54,28 +37,30 @@ const LeetCodePage = () => {
     }
   };
 
-  if (isLoadingQuestions || isLoadingCategories) {
-    return <Loader />;
-  }
+  const filteredQuestions = useMemo(() => {
+    return questions.filter(
+      q =>
+        (selectedDifficulty === 'ALL' || q.difficulty === selectedDifficulty) &&
+        q.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [questions, selectedDifficulty, searchQuery]);
 
-  const filteredQuestions = questions?.filter(
-    q =>
-      (selectedDifficulty === 'ALL' || q.difficulty === selectedDifficulty) &&
-      q.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Restructured to return an array of category objects with their questions
+  const categorizedQuestions = useMemo(() => {
+    return categories
+      .map(category => {
+        const categoryQuestions = filteredQuestions.filter(q => q.category_id === category.id);
+        return {
+          category,
+          questions: categoryQuestions
+        };
+      })
+      .filter(item => item.questions.length > 0); // Only keep categories with questions
+  }, [categories, filteredQuestions]);
 
-  const questionsByCategory = categories?.reduce((acc, category) => {
-    const categoryQuestions = filteredQuestions?.filter(q => q.category_id === category.id) ?? [];
-    if (categoryQuestions.length > 0) {
-      acc[category.id] = {
-        category,
-        questions: categoryQuestions,
-      };
-    }
-    return acc;
-  }, {} as Record<number, { category: QuestionCategory; questions: Question[] }>);
-
-  const uncategorizedQuestions = filteredQuestions?.filter(q => !q.category_id) ?? [];
+  const uncategorizedQuestions = useMemo(() => {
+    return filteredQuestions.filter(q => !q.category_id);
+  }, [filteredQuestions]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -144,38 +129,35 @@ const LeetCodePage = () => {
         </div>
       </div>
 
-      {!filteredQuestions || filteredQuestions.length === 0 ? (
+      {filteredQuestions.length === 0 ? (
         <div className="border-muted bg-background flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground mb-4 text-lg">No questions found</p>
           <p className="text-muted-foreground text-sm">Add your first question to start tracking</p>
         </div>
       ) : (
         <div className="space-y-8">
-          {categories?.map(category => {
-            const categoryData = questionsByCategory?.[category.id];
-            if (!categoryData) return null;
-
-            return (
-              <div key={category.id} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-foreground text-lg font-semibold">{category.name}</h3>
-                  <div className="text-muted-foreground text-sm">
-                    {categoryData.questions.length} questions
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {categoryData.questions.map(question => (
-                    <QuestionCard
-                      key={question.id}
-                      question={question}
-                      onMarkAsSolved={handleMarkAsSolved}
-                    />
-                  ))}
+          {/* Render categorized questions */}
+          {categorizedQuestions.map(({ category, questions }) => (
+            <div key={category.id} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-foreground text-lg font-semibold">{category.name}</h3>
+                <div className="text-muted-foreground text-sm">
+                  {questions.length} questions
                 </div>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {questions.map(question => (
+                  <QuestionCard
+                    key={question.id}
+                    question={question}
+                    onMarkAsSolved={handleMarkAsSolved}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
 
+          {/* Render uncategorized questions */}
           {uncategorizedQuestions.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">

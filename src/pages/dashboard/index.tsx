@@ -3,16 +3,16 @@ import RecentApplications from '@/components/dashboard/recent-applications';
 import { StatsSection } from '@/components/dashboard/stats-section';
 import TasksWidget from '@/components/dashboard/tasks-widget';
 import UpcomingInterviews from '@/components/dashboard/upcoming-interviews';
-import { useSession } from '@/hooks/use-session';
+import { useAuthStore } from '@/store/auth';
 
 export default function DashboardPage() {
-  const { session } = useSession();
+  const { user } = useAuthStore();
   return (
     <div className="w-full">
       <main className="mx-auto max-w-[100rem] px-6 py-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold">
-            Welcome back, {session?.user.user_metadata.name}!
+            Welcome back, {user?.user_metadata.name}!
           </h2>
           <p className="mt-1 text-gray-600">Here's what's happening with your job search today.</p>
         </div>

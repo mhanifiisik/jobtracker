@@ -1,10 +1,9 @@
 import { formatDate } from '@/utils/format-date';
 import { getStatusColor } from '@/utils/job-status-color';
-import { JobStatusLabels } from '@/utils/job-status-mapper';
 import { Building, MessageCircle } from 'lucide-react';
 import Card from './ui/card';
 import { type Tables } from '@/types/db-tables';
-import type { JobStatus } from '@/constants/job-status.enum';
+import { JobStatusLabels } from '@/utils/job-status-mapper';
 
 interface ApplicationCardProps {
   application: Tables['job_applications']['Row'];
@@ -12,6 +11,8 @@ interface ApplicationCardProps {
 }
 
 export default function ApplicationCard({ application, onDelete }: ApplicationCardProps) {
+  const statusLabel = JobStatusLabels[application.status];
+
   return (
     <Card
       title={application.position_title}
@@ -19,8 +20,8 @@ export default function ApplicationCard({ application, onDelete }: ApplicationCa
       description={'JOB DESCRIPTION'}
       icon={Building}
       status={{
-        label: JobStatusLabels[application.status as keyof typeof JobStatusLabels],
-        color: getStatusColor(application.status as JobStatus),
+        label: statusLabel,
+        color: getStatusColor(application.status),
       }}
       date={application.created_at ? formatDate(new Date(application.created_at)) : ''}
       location={application.location}

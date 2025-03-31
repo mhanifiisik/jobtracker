@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
@@ -38,43 +38,36 @@ export interface Database {
       };
       documents: {
         Row: {
+          content: string | null;
           created_at: string | null;
           doc_type: string;
-          file_url: string;
           id: number;
           title: string;
-          user_id: string;
-          content: string;
           updated_at: string | null;
-          file_type: string;
+          user_id: string;
         };
         Insert: {
+          content?: string | null;
           created_at?: string | null;
           doc_type: string;
-          file_url: string;
           id?: never;
           title: string;
-          user_id: string;
-          content: string;
           updated_at?: string | null;
-          file_type: string;
+          user_id: string;
         };
         Update: {
+          content?: string | null;
           created_at?: string | null;
           doc_type?: string;
-          file_url?: string;
           id?: never;
           title?: string;
-          user_id?: string;
-          content?: string;
           updated_at?: string | null;
-          file_type?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
       interviews: {
         Row: {
-          job_applications: any;
           application_id: number | null;
           created_at: string | null;
           id: number;
@@ -318,14 +311,17 @@ export interface Database {
       };
       study_plan_questions: {
         Row: {
+          id: string;
           question_id: number;
           study_plan_id: number;
         };
         Insert: {
+          id?: string;
           question_id: number;
           study_plan_id: number;
         };
         Update: {
+          id?: string;
           question_id?: number;
           study_plan_id?: number;
         };
@@ -462,14 +458,16 @@ export interface Database {
       difficulty_enum: 'easy' | 'medium' | 'hard';
       interview_status_enum: 'scheduled' | 'completed' | 'canceled';
       interview_type_enum: 'phone' | 'in-person' | 'video';
-      job_application_status_enum: 'applied' | 'interviewing' | 'offered' | 'rejected';
+      job_application_status_enum: 'applied' | 'in interview' | 'offer' | 'rejected' | 'wishlist';
       job_status:
         | 'new'
         | 'applied'
-        | 'in interview'
-        | 'on wishlist'
+        | 'saved'
+        | 'interviewing'
+        | 'offered'
         | 'rejected'
-        | 'ready for review';
+        | 'archived'
+        | 'withdrawn';
       mod_status: 'productive' | 'neutral' | 'struggling';
       progress_status: 'new' | 'learning' | 'reviewing' | 'mastered';
       status_enum: 'pending' | 'in progress' | 'completed' | 'cancelled';
@@ -551,4 +549,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
     ? PublicSchema['Enums'][PublicEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema['CompositeTypes']
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema['CompositeTypes']
+    ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never;

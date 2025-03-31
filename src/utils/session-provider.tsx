@@ -1,26 +1,38 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
-import type { ReactNode } from 'react';
+import { useAuthStore } from '@/store/auth';
+import { useEffect } from 'react';
 import supabase from './supabase';
-import { SessionContext } from './session-context';
-import Loader from '@/components/ui/loading';
+import { Loader } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export const SessionProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const refreshSession = useAuthStore(state => state.refreshSession);
+  const isLoading = useAuthStore(state => state.isLoading);
+  const error = useAuthStore(state => state.error);
 
   useEffect(() => {
-    const { data: authStateListener } = supabase.auth.onAuthStateChange((_, session) => {
-      setSession(session);
-      setIsLoading(false);
+    void refreshSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      useAuthStore.setState({
+        user: session?.user ?? null,
+        session: session,
+      });
     });
 
     return () => {
-      authStateListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshSession]);
 
-  const memoizedValue = useMemo(() => ({ session }), [session]);
+  if (isLoading) {
+    return <Loader />;
+  }
 
-  return <SessionContext value={memoizedValue}>{isLoading ? <Loader /> : children}</SessionContext>;
-};
+  if (error) {
+    return toast.error(error);
+  }
+
+  return <>{children}</>;
+}
