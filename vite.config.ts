@@ -17,6 +17,12 @@ export default defineConfig({
       projectRoot: import.meta.dirname.replaceAll('\\', '/'),
     }),
   ],
+  preview:{
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    allowedHosts:true
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -28,5 +34,6 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    allowedHosts:true
   },
 });
