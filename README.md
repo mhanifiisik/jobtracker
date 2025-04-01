@@ -14,14 +14,13 @@ A web application that help to users to track their job hunting progress includi
 - Zustand
 
 
-## Roadmap
-
+## TODO
+- [X] Dockerize the app
 - [ ] Suspense with React 19
 - [ ] Error Boundary
 - [ ] React 19 Server Components
 - [ ] Notification System
 - [ ] Add tests
-- [ ] Dockerize the app
 - [ ] SEO Optimized
 
 
