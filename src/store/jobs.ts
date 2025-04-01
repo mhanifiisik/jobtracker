@@ -1,15 +1,17 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { Job } from '@/types/db-tables';
 import supabase from '@/utils/supabase';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
+import type { TablesUpdate } from '@/types/database';
+import type { TablesInsert } from '@/types/database';
 
 interface JobsState {
-  jobs: TableRow<'jobs'>[];
+  jobs: Job[];
   isLoading: boolean;
   error: string | null;
   fetchJobs: () => Promise<void>;
-  createJob: (job: TableInsert<'jobs'>) => Promise<void>;
-  updateJob: (id: number, job: TableUpdate<'jobs'>) => Promise<void>;
+  createJob: (job: TablesInsert<'jobs'>) => Promise<void>;
+  updateJob: (id: number, job: TablesUpdate<'jobs'>) => Promise<void>;
   deleteJob: (id: number) => Promise<void>;
 }
 
@@ -34,7 +36,7 @@ export const useJobsStore = create<JobsState>(set => ({
       set({ isLoading: false, jobs: data });
     }
   },
-  createJob: async (job: TableInsert<'jobs'>) => {
+  createJob: async (job: TablesInsert<'jobs'>) => {
     set({ isLoading: true, error: null });
 
     const user = useAuthStore.getState().user;
@@ -56,9 +58,18 @@ export const useJobsStore = create<JobsState>(set => ({
       }));
     }
   },
-  updateJob: async (id: number, job: TableUpdate<'jobs'>) => {
-    set({ isLoading: true, error: null });
-    const { data, error } = await supabase.from('jobs').update(job).eq('id', id).select();
+  updateJob: async (id: number, job: TablesUpdate<'jobs'>) => {
+    const user = useAuthStore.getState().user;
+    if (!user) {
+      set({ isLoading: false, error: 'User not authenticated' });
+      return;
+    }
+    const { data, error } = await supabase
+      .from('jobs')
+      .update(job)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select();
     if (error) {
       set({ isLoading: false, error: error.message });
     } else {

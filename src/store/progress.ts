@@ -1,15 +1,15 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
 
 interface ProgressState {
-  progress: TableRow<'user_question_progress'>[];
+  progress: Tables<'user_question_progress'>[];
   isLoading: boolean;
   error: string | null;
   fetchProgress: () => Promise<void>;
-  createProgress: (progress: TableInsert<'user_question_progress'>) => Promise<void>;
-  updateProgress: (id: number, progress: TableUpdate<'user_question_progress'>) => Promise<void>;
+  createProgress: (progress: TablesInsert<'user_question_progress'>) => Promise<void>;
+  updateProgress: (id: number, progress: TablesUpdate<'user_question_progress'>) => Promise<void>;
   deleteProgress: (id: number) => Promise<void>;
 }
 
@@ -34,7 +34,7 @@ export const useProgressStore = create<ProgressState>(set => ({
       set({ isLoading: false, progress: data });
     }
   },
-  createProgress: async (progress: TableInsert<'user_question_progress'>) => {
+  createProgress: async (progress: TablesInsert<'user_question_progress'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -55,7 +55,7 @@ export const useProgressStore = create<ProgressState>(set => ({
       }));
     }
   },
-  updateProgress: async (id: number, progress: TableUpdate<'user_question_progress'>) => {
+  updateProgress: async (id: number, progress: TablesUpdate<'user_question_progress'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {

@@ -1,9 +1,9 @@
-import type { Database } from './database';
+import type { Tables } from './database';
 
-export type Tables = Database['public']['Tables'];
-
-export type TableNames = keyof Tables;
-
-export type TableRow<T extends TableNames> = Tables[T]['Row'];
-export type TableInsert<T extends TableNames> = Tables[T]['Insert'];
-export type TableUpdate<T extends TableNames> = Tables[T]['Update'];
+export type Question = Tables<'questions'>;
+export type Interview = Tables<'interviews'>;
+export type Document = Tables<'documents'>;
+export type Job = Tables<'jobs'>;
+export type JobApplication = Tables<'job_applications'>;
+export type Task = Tables<'tasks'>;
+export type QuestionCategory = Tables<'question_categories'>;

@@ -1,62 +1,41 @@
-import { format } from 'date-fns';
-import { Video, Phone, Building2, Plus } from 'lucide-react';
-import type {  Tables } from '@/types/database';
-import { useInterviewsStore } from '@/store/interviews';
-import { useEffect } from 'react';
+import type { Interview } from '@/types/db-tables';
+import { Video, Phone, Building2 } from 'lucide-react';
+import { formatDate } from '@/utils/format-date';
 
-type Interview = Tables<'interviews'>;
-type InterviewType = Interview['interview_type'];
 
-const formatInterviewDate = (date: string) => {
-  return format(new Date(date), 'MMM d, yyyy h:mm a');
-};
 
-const getInterviewTypeIcon = (type: InterviewType) => {
-  switch (type.toLowerCase()) {
-    case 'video':
-      return <Video className="h-4 w-4" />;
-    case 'phone':
-      return <Phone className="h-4 w-4" />;
-    default:
-      return <Building2 className="h-4 w-4" />;
-  }
-};
 
-export default function UpcomingInterviews() {
+interface UpcomingInterviewsProps {
+  interviews: Interview[];
+}
 
-  const { upcomingInterviews, fetchUpcomingInterviews } = useInterviewsStore();
-
-  useEffect(() => {
-    void fetchUpcomingInterviews();
-  }, [fetchUpcomingInterviews]);
-
+export default function UpcomingInterviews({ interviews }: UpcomingInterviewsProps) {
   return (
     <div className="border-border overflow-hidden rounded-lg border bg-card">
-      <button
-        type="button"
-        className="text-primary hover:text-primary/80 flex w-full items-center gap-1 border-b border-border p-4 text-sm font-medium"
-      >
-        <Plus className="h-4 w-4" />
-        Schedule New Interview
-      </button>
       <div className="divide-border divide-y">
-        {upcomingInterviews.length > 0 ? (
-          upcomingInterviews.map(interview => (
+        {interviews.length > 0 ? (
+          interviews.map(interview => (
             <div
-              key={interview.interview_id}
+              key={interview.id}
               className="cursor-pointer p-4 transition-colors hover:bg-muted/50"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium text-foreground">
-                    {interview.company_name}
+                    {interview.notes ?? 'Interview'}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {interview.position_title}
+                    {interview.interview_type}
                   </p>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2">
-                  {getInterviewTypeIcon(interview.interview_type as InterviewType)}
+                  {interview.interview_type === 'video' ? (
+                    <Video className="h-4 w-4" />
+                  ) : interview.interview_type === 'phone' ? (
+                    <Phone className="h-4 w-4" />
+                  ) : (
+                    <Building2 className="h-4 w-4" />
+                  )}
                   <span className="text-xs capitalize">
                     {interview.interview_type.toLowerCase()}
                   </span>
@@ -66,7 +45,7 @@ export default function UpcomingInterviews() {
               <div className="text-muted-foreground mt-3 flex items-center gap-2 text-xs">
                 <div className="flex items-center gap-1.5">
                   <time dateTime={interview.interview_date}>
-                    {formatInterviewDate(interview.interview_date)}
+                    {formatDate(new Date(interview.interview_date))}
                   </time>
                 </div>
                 {interview.location && (

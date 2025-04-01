@@ -1,17 +1,19 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
 import type { UpcomingInterview } from '@/types/upcoming-interviews';
+import type { Interview } from '@/types/db-tables';
+
 interface InterviewState {
-  interviews: TableRow<'interviews'>[];
+  interviews: Interview[];
   upcomingInterviews: UpcomingInterview[];
   isLoading: boolean;
   error: string | null;
   fetchInterviews: () => Promise<void>;
   fetchUpcomingInterviews: () => Promise<void>;
-  createInterview: (interview: TableInsert<'interviews'>) => Promise<void>;
-  updateInterview: (id: number, interview: TableUpdate<'interviews'>) => Promise<void>;
+  createInterview: (interview: TablesInsert<'interviews'>) => Promise<void>;
+  updateInterview: (id: number, interview: TablesUpdate<'interviews'>) => Promise<void>;
   deleteInterview: (id: number) => Promise<void>;
 }
 
@@ -67,7 +69,7 @@ export const useInterviewsStore = create<InterviewState>(set => ({
     }
   },
 
-  createInterview: async (interview: TableInsert<'interviews'>) => {
+  createInterview: async (interview: TablesInsert<'interviews'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -88,7 +90,7 @@ export const useInterviewsStore = create<InterviewState>(set => ({
       }));
     }
   },
-  updateInterview: async (id: number, interview: TableUpdate<'interviews'>) => {
+  updateInterview: async (id: number, interview: TablesUpdate<'interviews'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {

@@ -7,6 +7,7 @@ import reactX from 'eslint-plugin-react-x';
 import reactDom from 'eslint-plugin-react-dom';
 import noBarrelFiles from 'eslint-plugin-no-barrel-files';
 import imports from 'eslint-plugin-import';
+import reactCompiler from 'eslint-plugin-react-compiler'
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', '.git', 'build'] },
@@ -31,14 +32,15 @@ export default tseslint.config(
       'react-refresh': reactRefresh,
       'react-x': reactX,
       'react-dom': reactDom,
+      'react-compiler': reactCompiler,
       'no-barrel-files': noBarrelFiles,
       import: imports,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       ...reactX.configs['recommended-typescript'].rules,
       ...reactDom.configs.recommended.rules,
+      'react-compiler/react-compiler': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-barrel-files/no-barrel-files': 'error',
       'no-mixed-operators': 'off',

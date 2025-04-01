@@ -1,47 +1,28 @@
-import { Code, CheckCircle, ArrowRight } from 'lucide-react';
-import { useProgressStore } from '@/store/progress';
-import { useEffect } from 'react';
-import { useQuestionsStore } from '@/store/questions';
+import { Code, CheckCircle } from 'lucide-react';
 
-export default function ProgressCard() {
+interface DifficultyProgress {
+  name: string;
+  total: number;
+  solved: number;
+  textColor: string;
+}
 
-  const { questions, fetchQuestions } = useQuestionsStore();
-  const { progress, fetchProgress } = useProgressStore();
+interface ProgressData {
+  totalQuestions: number;
+  solvedQuestions: number;
+  attemptingQuestions: number;
+  difficulties: DifficultyProgress[];
+}
 
-  useEffect(() => {
-    void fetchQuestions();
-    void fetchProgress();
-  }, [fetchQuestions, fetchProgress]);
+interface ProgressCardProps {
+  data: ProgressData;
+}
 
-  const totalQuestions = questions.length;
-  const solvedQuestions =
-    progress.filter(progress => progress.status === 'solved').length;
-  const attemptingQuestions =
-    progress.filter(progress => progress.status === 'attempted').length;
-
-  const totalProgressPercentage =
-    totalQuestions > 0 ? Math.round((solvedQuestions / totalQuestions) * 100) : 0;
-
-  const difficulties = [
-    { name: 'Easy', textColor: 'text-chart-1 dark:text-chart-1/90' },
-    { name: 'Medium', textColor: 'text-chart-2 dark:text-chart-2/90' },
-    { name: 'Hard', textColor: 'text-chart-3 dark:text-chart-3/90' },
-  ].map(diff => {
-    const total = questions.filter(q => q.difficulty === diff.name.toLowerCase()).length;
-    const solved =
-      progress.filter(
-        progress =>
-          progress.status === 'solved' &&
-          questions.find(q => q.id === progress.question_id)?.difficulty ===
-            diff.name.toLowerCase()
-      ).length;
-
-    return {
-      ...diff,
-      total,
-      solved,
-    };
-  });
+export default function ProgressCard({ data }: ProgressCardProps) {
+  const { totalQuestions, solvedQuestions, attemptingQuestions, difficulties } = data;
+  const totalProgressPercentage = totalQuestions > 0
+    ? Math.round((solvedQuestions / totalQuestions) * 100)
+    : 0;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm md:col-span-3 lg:col-span-7">
@@ -92,16 +73,6 @@ export default function ProgressCard() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-end">
-          <button
-            type="button"
-            className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-          >
-            View All Questions
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
         </div>
       </div>
     </div>

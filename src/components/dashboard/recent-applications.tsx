@@ -1,59 +1,25 @@
-import { useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { MapPin, Building2 } from 'lucide-react';
-import type { Tables } from '@/types/database';
-import { useApplicationsStore } from '@/store/applications';
+import type{ Job } from '@/types/db-tables';
+import { getStatusColor } from '@/utils/job-status-color';
 
-type JobApplication = Tables<'job_applications'>;
-type JobStatus = JobApplication['status'];
+
 
 interface ApplicationDisplay {
   id: number;
   company_name: string;
   position: string;
   location: string;
-  status: JobStatus;
+  status: Job['status'];
   applied_date: string;
 }
 
-function RecentApplications() {
+interface RecentApplicationsProps {
+  applications: ApplicationDisplay[];
+}
 
-  const { recentApplications,fetchRecentApplications: fetchRecentApplications} = useApplicationsStore();
 
-  useEffect(() => {
-    void fetchRecentApplications();
-  }, [fetchRecentApplications]);
-
-  const applications = useMemo(() => {
-    if (!recentApplications) return [];
-
-    return recentApplications.map(app => ({
-      id: app.id,
-      company_name: app.company_name,
-      position: app.position_title,
-      location: app.location,
-      status: app.status,
-      applied_date: app.date_applied,
-    })) as ApplicationDisplay[];
-  }, [recentApplications]);
-
-  const getStatusColor = (status: Tables<'job_applications'>['status']) => {
-    switch (status) {
-      case 'interviewing':
-        return 'text-blue-500 bg-blue-100';
-      case 'saved':
-        return 'text-purple-500 bg-purple-100';
-      case 'applied':
-        return 'text-yellow-500 bg-yellow-100';
-      case 'offered':
-        return 'text-green-500 bg-green-100';
-      case 'rejected':
-        return 'text-red-500 bg-red-100';
-      default:
-        return 'text-gray-500 bg-gray-100';
-    }
-  };
-
+export default function RecentApplications({ applications }: RecentApplicationsProps) {
   return (
     <div className="relative overflow-hidden rounded-lg bg-card border border-border">
       <div className="divide-border divide-y">
@@ -96,5 +62,3 @@ function RecentApplications() {
     </div>
   );
 }
-
-export default RecentApplications;

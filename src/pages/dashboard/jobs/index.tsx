@@ -4,11 +4,13 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router';
 import { useState, useEffect, useMemo } from 'react';
 import { useJobsStore } from '@/store/jobs';
+import { JOB_STATUSES } from '@/constants/job-statuses.constant';
+import type { Job } from '@/types/db-tables';
 
 export default function JobsPage() {
 
-  const { jobs, fetchJobs,deleteJob, isLoading } = useJobsStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { jobs, fetchJobs,deleteJob, isLoading, updateJob } = useJobsStore();
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'date' | 'status'>('date');
 
 
@@ -16,6 +18,16 @@ export default function JobsPage() {
   useEffect(() => {
     void fetchJobs();
   }, [fetchJobs]);
+
+  const handleStatusChange = async (jobId: number, status:Job['status']) => {
+    try {
+      await updateJob(jobId, { status });
+      toast.success('Job status updated successfully');
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      toast.error('Failed to update job status');
+    }
+  };
 
   const handleDelete = async (jobId: number) => {
     if (window.confirm('Are you sure you want to delete this job?')) {
@@ -108,7 +120,13 @@ export default function JobsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sortedJobs.map(job => (
-            <JobCard key={job.id} job={job} onDelete={async () => { await handleDelete(job.id); }} />
+            <JobCard
+              key={job.id}
+              job={job}
+              onDelete={() => handleDelete(job.id)}
+              onStatusChange={handleStatusChange}
+              statusOptions={JOB_STATUSES.map(status => ({ value: status, label: status }))}
+            />
           ))}
         </div>
       )}

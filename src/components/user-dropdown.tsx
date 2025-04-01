@@ -1,25 +1,15 @@
 import { LogOut, User } from 'lucide-react';
-import { useAuthStore } from '@/store/auth';
-import supabase from '@/utils/supabase';
-import { handleError } from '@/utils/error-handler';
 import { useState, useRef, useEffect } from 'react';
 
 interface UserDropdownProps {
   collapsed?: boolean;
+  userEmail?: string;
+  onSignOut: () => Promise<void>;
 }
 
-export default function UserDropdown({ collapsed }: UserDropdownProps) {
-  const { user } = useAuthStore();
+export default function UserDropdown({ collapsed, userEmail, onSignOut }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      handleError(error);
-    }
-  };
 
   const truncateEmail = (email: string) => {
     if (email.length > 20) {
@@ -54,10 +44,8 @@ export default function UserDropdown({ collapsed }: UserDropdownProps) {
         <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-full">
           <User className="h-4 w-4" />
         </div>
-        {!collapsed && (
-          <span className="max-w-[150px] truncate text-sm">
-            {user?.email && truncateEmail(user.email)}
-          </span>
+        {!collapsed && userEmail && (
+          <span className="max-w-[150px] truncate text-sm">{truncateEmail(userEmail)}</span>
         )}
       </button>
 
@@ -65,7 +53,7 @@ export default function UserDropdown({ collapsed }: UserDropdownProps) {
         <div className="absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={onSignOut}
             className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
           >
             <LogOut className="h-4 w-4" />

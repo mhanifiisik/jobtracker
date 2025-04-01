@@ -1,15 +1,16 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { Task } from '@/types/db-tables';
 import supabase from '@/utils/supabase';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 
 interface TasksState {
-  tasks: TableRow<'tasks'>[];
+  tasks: Task[];
   isLoading: boolean;
   error: string | null;
   fetchTasks: () => Promise<void>;
-  createTask: (task: TableInsert<'tasks'>) => Promise<void>;
-  updateTask: (id: number, task: TableUpdate<'tasks'>) => Promise<void>;
+  createTask: (task: TablesInsert<'tasks'>) => Promise<void>;
+  updateTask: (id: number, task: TablesUpdate<'tasks'>) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
 }
 
@@ -31,7 +32,7 @@ export const useTasksStore = create<TasksState>(set => ({
       set({ isLoading: false, tasks: data });
     }
   },
-  createTask: async (task: TableInsert<'tasks'>) => {
+  createTask: async (task: Omit<Task, 'id' | 'created_at'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -52,7 +53,7 @@ export const useTasksStore = create<TasksState>(set => ({
       }));
     }
   },
-  updateTask: async (id: number, task: TableUpdate<'tasks'>) => {
+  updateTask: async (id: number, task: TablesUpdate<'tasks'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {

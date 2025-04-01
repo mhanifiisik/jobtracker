@@ -1,17 +1,18 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { JobApplication } from '@/types/db-tables';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 
 interface ApplicationsState {
-  applications: TableRow<'job_applications'>[];
+  applications: JobApplication[];
   isLoading: boolean;
   error: string | null;
-  recentApplications: TableRow<'job_applications'>[] | null;
+  recentApplications: JobApplication[] | null;
   fetchRecentApplications: () => Promise<void>;
   fetchApplications: () => Promise<void>;
-  createApplication: (application: TableInsert<'job_applications'>) => Promise<void>;
-  updateApplication: (id: number, application: TableUpdate<'job_applications'>) => Promise<void>;
+  createApplication: (application: TablesInsert<'job_applications'>) => Promise<void>;
+  updateApplication: (id: number, application: TablesUpdate<'job_applications'>) => Promise<void>;
   deleteApplication: (id: number) => Promise<void>;
 }
 
@@ -57,7 +58,7 @@ export const useApplicationsStore = create<ApplicationsState>(set => ({
     }
   },
 
-  createApplication: async (application: TableInsert<'job_applications'>) => {
+  createApplication: async (application: TablesInsert<'job_applications'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -74,7 +75,7 @@ export const useApplicationsStore = create<ApplicationsState>(set => ({
       }));
     }
   },
-  updateApplication: async (id: number, application: TableUpdate<'job_applications'>) => {
+  updateApplication: async (id: number, application: TablesUpdate<'job_applications'>) => {
     set({ isLoading: true, error: null });
     const { data, error } = await supabase
       .from('job_applications')

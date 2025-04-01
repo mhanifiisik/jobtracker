@@ -1,12 +1,12 @@
 import { questionSchema } from "@/schemas/question-schemas";
 import { useAuthStore } from "@/store/auth";
 import { useQuestionsStore } from "@/store/questions";
-import type{ Database } from "@/types/database";
+import type { Question } from "@/types/db-tables";
 import { useFormik } from "formik";
 import { Plus } from "lucide-react";
 import { useEffect } from "react";
 
-type QuestionDifficulty = Database['public']['Enums']['difficulty_enum'];
+
 
 
 export const QuestionForm = () => {
@@ -17,7 +17,7 @@ export const QuestionForm = () => {
     initialValues: {
       title: '',
       url: '',
-      difficulty: 'easy' as QuestionDifficulty,
+      difficulty: 'easy' as Question['difficulty'],
       category_id: 0,
       notes: '',
       user_id: userId ?? '',
@@ -75,7 +75,7 @@ export const QuestionForm = () => {
         </label>
         <select
           id="difficulty"
-          value={formik.values.difficulty}
+          value={formik.values.difficulty ?? 'easy'}
           onChange={formik.handleChange}
           className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
         >

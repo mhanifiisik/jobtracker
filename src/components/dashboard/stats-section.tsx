@@ -1,32 +1,43 @@
 import { Send, Building, Award, Code } from 'lucide-react';
 import { StatsCard } from './stats-card';
-import { useApplicationsStore } from '@/store/applications';
-import { useQuestionsStore } from '@/store/questions';
-import { useProgressStore } from '@/store/progress';
-import { useInterviewsStore } from '@/store/interviews';
-import { useEffect } from 'react';
 
-export function StatsSection() {
-  const { applications , fetchApplications } = useApplicationsStore();
-  const { interviews, fetchInterviews } = useInterviewsStore();
-  const { questions, fetchQuestions } = useQuestionsStore();
-  const { progress, fetchProgress } = useProgressStore();
+interface StatsData {
+  totalApplications: number;
+  pendingApplications: number;
+  rejectedApplications: number;
+  totalInterviews: number;
+  upcomingInterviews: number;
+  totalQuestions: number;
+  solvedQuestions: number;
+}
 
-  useEffect(() => {
-    void fetchApplications();
-    void fetchInterviews();
-    void fetchQuestions();
-    void fetchProgress();
-  }, [fetchApplications, fetchInterviews, fetchQuestions, fetchProgress]);
+interface StatsSectionProps {
+  data: StatsData;
+}
+
+export function StatsSection({ data }: StatsSectionProps) {
+  const {
+    totalApplications,
+    pendingApplications,
+    rejectedApplications,
+    totalInterviews,
+    upcomingInterviews,
+    totalQuestions,
+    solvedQuestions,
+  } = data;
+
+  const responseRate = totalApplications > 0
+    ? Math.round((totalInterviews / totalApplications) * 100)
+    : 0;
 
   return (
     <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatsCard
         title="Total Applications"
-        value={applications.length.toString()}
+        value={totalApplications.toString()}
         trend={{
-          value: `${applications.filter(app => app.status === 'applied').length} pending`,
-          label: `${applications.filter(app => app.status === 'rejected').length} rejected`,
+          value: `${pendingApplications} pending`,
+          label: `${rejectedApplications} rejected`,
           positive: true,
         }}
         icon={<Send className="h-4 w-4 text-primary" />}
@@ -34,9 +45,9 @@ export function StatsSection() {
 
       <StatsCard
         title="Interviews"
-        value={interviews.length.toString()}
+        value={totalInterviews.toString()}
         trend={{
-          value: `${interviews.length} upcoming`,
+          value: `${upcomingInterviews} upcoming`,
           label: 'scheduled interviews',
           positive: true,
         }}
@@ -45,9 +56,9 @@ export function StatsSection() {
 
       <StatsCard
         title="Response Rate"
-        value={`${((interviews.length / applications.length) * 100)}%`}
+        value={`${responseRate}%`}
         trend={{
-          value: `${interviews.length} offers`,
+          value: `${totalInterviews} offers`,
           label: 'received',
           positive: true,
         }}
@@ -56,7 +67,7 @@ export function StatsSection() {
 
       <StatsCard
         title="LeetCode Problems"
-        value={`${progress.filter(progress => progress.status === 'solved').length}/${questions.length}`}
+        value={`${solvedQuestions}/${totalQuestions}`}
         icon={<Code className="h-4 w-4 text-primary" />}
       />
     </div>

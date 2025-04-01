@@ -1,26 +1,20 @@
 import { formatDate } from '@/utils/format-date';
 import { Building, ExternalLink, MapPin, Calendar, Briefcase } from 'lucide-react';
 import Card from './ui/card';
-import type { Tables } from '@/types/database';
 import { getStatusColor } from '@/utils/job-status-color';
 import { StatusForm } from './ui/status-form';
-import { useJobsStore } from '@/store/jobs';
-import { JobStatusLabels } from '@/utils/job-status-mapper';
+import type { Job } from '@/types/db-tables';
 
 interface JobCardProps {
-  job: Tables<'jobs'>;
+  job: Job;
   onDelete: () => void;
+  onStatusChange: (id: number, status: Job['status']) => Promise<void>;
+  statusOptions: { value: string; label: string }[];
 }
 
-export default function JobCard({ job, onDelete }: JobCardProps) {
+export default function JobCard({ job, onDelete, onStatusChange, statusOptions }: JobCardProps) {
   const formattedDate = job.created_at ? formatDate(new Date(job.created_at)) : '';
-
-  const { updateJob } = useJobsStore();
   const statusColor = getStatusColor(job.status);
-
-  const handleStatusChange = async (id: string, status: NonNullable<Tables<'jobs'>['status']>) => {
-    await updateJob(Number(id), { status });
-  };
 
   return (
     <Card
@@ -74,13 +68,10 @@ export default function JobCard({ job, onDelete }: JobCardProps) {
 
       <div className="mt-4 border-t pt-4">
         <StatusForm
-          id={job.id.toString()}
-          options={Object.entries(JobStatusLabels).map(([value, label]) => ({
-            value,
-            label,
-          }))}
+          id={job.id}
+          options={statusOptions}
           initialStatus={job.status ?? 'new'}
-          onStatusChange={handleStatusChange}
+          onStatusChange={onStatusChange}
         />
       </div>
     </Card>

@@ -1,6 +1,6 @@
-import type { Tables } from '@/types/db-tables';
+import type { Job } from '@/types/db-tables';
 
-export const getStatusColor = (status: Tables['jobs']['Row']['status']): string => {
+export const getStatusColor = (status: Job['status']): string => {
   switch (status) {
     case 'new':
       return 'bg-primary text-primary-dark';

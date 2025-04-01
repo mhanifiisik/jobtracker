@@ -1,15 +1,16 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { Document } from '@/types/db-tables';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
 
 interface DocumentsState {
-  documents: TableRow<'documents'>[];
+  documents: Document[];
   isLoading: boolean;
   error: string | null;
   fetchDocuments: () => Promise<void>;
-  createDocument: (document: TableInsert<'documents'>) => Promise<void>;
-  updateDocument: (id: number, document: TableUpdate<'documents'>) => Promise<void>;
+  createDocument: (document: TablesInsert<'documents'>) => Promise<void>;
+  updateDocument: (id: number, document: TablesUpdate<'documents'>) => Promise<void>;
   deleteDocument: (id: number) => Promise<void>;
 }
 
@@ -31,7 +32,7 @@ export const useDocumentsStore = create<DocumentsState>(set => ({
       set({ isLoading: false, documents: data });
     }
   },
-  createDocument: async (document: TableInsert<'documents'>) => {
+  createDocument: async (document: TablesInsert<'documents'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -52,7 +53,7 @@ export const useDocumentsStore = create<DocumentsState>(set => ({
       }));
     }
   },
-  updateDocument: async (id: number, document: TableUpdate<'documents'>) => {
+  updateDocument: async (id: number, document: TablesUpdate<'documents'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {

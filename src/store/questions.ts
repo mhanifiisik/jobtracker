@@ -1,20 +1,21 @@
-import type { TableInsert, TableRow, TableUpdate } from '@/types/db-tables';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 import supabase from '@/utils/supabase';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
+import type { Question, QuestionCategory } from '@/types/db-tables';
 
 interface QuestionsState {
-  questions: TableRow<'questions'>[];
+  questions: Question[];
   isLoading: boolean;
   error: string | null;
-  categories: TableRow<'question_categories'>[];
+  categories: QuestionCategory[];
   fetchQuestions: () => Promise<void>;
-  createQuestion: (question: TableInsert<'questions'>) => Promise<void>;
-  updateQuestion: (id: number, question: TableUpdate<'questions'>) => Promise<void>;
+  createQuestion: (question: TablesInsert<'questions'>) => Promise<void>;
+  updateQuestion: (id: number, question: TablesUpdate<'questions'>) => Promise<void>;
   deleteQuestion: (id: number) => Promise<void>;
   fetchCategories: () => Promise<void>;
-  createCategory: (category: TableInsert<'question_categories'>) => Promise<void>;
-  updateCategory: (id: number, category: TableUpdate<'question_categories'>) => Promise<void>;
+  createCategory: (category: TablesInsert<'question_categories'>) => Promise<void>;
+  updateCategory: (id: number, category: TablesUpdate<'question_categories'>) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
 }
 
@@ -37,7 +38,7 @@ export const useQuestionsStore = create<QuestionsState>(set => ({
       set({ isLoading: false, questions: data });
     }
   },
-  createQuestion: async (question: TableInsert<'questions'>) => {
+  createQuestion: async (question: TablesInsert<'questions'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -58,7 +59,7 @@ export const useQuestionsStore = create<QuestionsState>(set => ({
       }));
     }
   },
-  updateQuestion: async (id: number, question: TableUpdate<'questions'>) => {
+  updateQuestion: async (id: number, question: TablesUpdate<'questions'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -114,7 +115,7 @@ export const useQuestionsStore = create<QuestionsState>(set => ({
       set({ isLoading: false, categories: data });
     }
   },
-  createCategory: async (category: TableInsert<'question_categories'>) => {
+  createCategory: async (category: TablesInsert<'question_categories'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
@@ -135,7 +136,7 @@ export const useQuestionsStore = create<QuestionsState>(set => ({
       }));
     }
   },
-  updateCategory: async (id: number, category: TableUpdate<'question_categories'>) => {
+  updateCategory: async (id: number, category: TablesUpdate<'question_categories'>) => {
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {

@@ -2,16 +2,14 @@ import { formatDate } from '@/utils/format-date';
 import { getStatusColor } from '@/utils/job-status-color';
 import { Building, MessageCircle } from 'lucide-react';
 import Card from './ui/card';
-import { type Tables } from '@/types/db-tables';
-import { JobStatusLabels } from '@/utils/job-status-mapper';
-
+import type { JobApplication } from '@/types/db-tables';
 interface ApplicationCardProps {
-  application: Tables['job_applications']['Row'];
+  application: JobApplication;
   onDelete?: (id: number) => void;
 }
 
 export default function ApplicationCard({ application, onDelete }: ApplicationCardProps) {
-  const statusLabel = JobStatusLabels[application.status];
+  const statusLabel = application.status;
 
   return (
     <Card
