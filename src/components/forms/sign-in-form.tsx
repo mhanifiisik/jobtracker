@@ -31,7 +31,7 @@ export const SignInForm = ({ onToggleMode }: SignInFormProps) => {
       const { error } = await supabase.auth.resetPasswordForEmail(
         formik.values.email,
         {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
+          redirectTo: `${import.meta.env.VITE_BASE_URL}/auth/reset-password`,
         }
       );
       if (error) throw error;

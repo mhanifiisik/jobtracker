@@ -102,7 +102,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
+            redirectTo: `${import.meta.env.VITE_BASE_URL}/reset-password`,
           });
 
           if (error) throw error;
@@ -143,7 +143,7 @@ export const useAuthStore = create<AuthState>()(
           const { error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: {
-              redirectTo: `${window.location.origin}/dashboard`,
+              redirectTo: `${import.meta.env.VITE_BASE_URL}/dashboard`,
             },
           });
 
