@@ -20,7 +20,7 @@ function LeetCodePage() {
   const difficultyDropdownRef = useRef<HTMLDivElement>(null)
 
   const { questions, categories, fetchQuestions, fetchCategories } = useQuestionsStore()
-  const {progress, fetchProgress, updateProgress } = useProgressStore()
+  const {progress, fetchProgress } = useProgressStore()
 
   useEffect(() => {
     void fetchQuestions()
@@ -47,22 +47,20 @@ function LeetCodePage() {
   const stats = useMemo(() => {
     const total = questions.length
     const solved = progress.filter((q) => q.status === "solved").length
-
-    const totalTimesSolved= progress.reduce((sum, q) => sum + (q.times_solved ?? 0), 0)
-
+    const totalTimesSolved = progress.reduce((sum, q) => sum + (q.times_solved ?? 0), 0)
 
     const easy = questions.filter((q) => q.difficulty === "easy").length
     const medium = questions.filter((q) => q.difficulty === "medium").length
     const hard = questions.filter((q) => q.difficulty === "hard").length
 
     const easySolved = progress.filter(
-      (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "easy" && q.status === "solved",
+      (p) => p.question_id && questions.find((q) => q.id === p.question_id)?.difficulty === "easy" && p.status === "solved",
     ).length
     const mediumSolved = progress.filter(
-      (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "medium" && q.status === "solved",
+      (p) => p.question_id && questions.find((q) => q.id === p.question_id)?.difficulty === "medium" && p.status === "solved",
     ).length
     const hardSolved = progress.filter(
-        (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "hard" && q.status === "solved",
+      (p) => p.question_id && questions.find((q) => q.id === p.question_id)?.difficulty === "hard" && p.status === "solved",
     ).length
 
     return {
@@ -80,9 +78,8 @@ function LeetCodePage() {
       hardProgress: hard > 0 ? (hardSolved / hard) * 100 : 0,
       totalTimesSolved,
     }
-  }, [questions,progress])
+  }, [questions, progress])
 
-  // Filter questions based on search, difficulty, and category
   const filteredQuestions = useMemo(() => {
     return questions.filter((question) => {
       const matchesSearch = searchQuery ? question.title.toLowerCase().includes(searchQuery.toLowerCase()) : true
@@ -115,7 +112,6 @@ function LeetCodePage() {
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Overall Progress Card */}
         <div className="bg-white rounded-lg border shadow-sm p-4">
@@ -202,7 +198,6 @@ function LeetCodePage() {
         </div>
       </div>
 
-      {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -218,7 +213,6 @@ function LeetCodePage() {
         </div>
 
         <div className="flex gap-2">
-          {/* Category Dropdown */}
           <div className="relative" ref={categoryDropdownRef}>
             <button
             type='button'
@@ -269,7 +263,6 @@ function LeetCodePage() {
             )}
           </div>
 
-          {/* Difficulty Dropdown */}
           <div className="relative" ref={difficultyDropdownRef}>
             <button
             type='button'
@@ -338,7 +331,6 @@ function LeetCodePage() {
         questions={filteredQuestions}
         categories={categories}
         progress={progress}
-        updateProgress={updateProgress}
         setIsAddDialogOpen={setIsAddDialogOpen}
       />
 

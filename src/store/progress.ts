@@ -9,7 +9,10 @@ interface ProgressState {
   error: string | null;
   fetchProgress: () => Promise<void>;
   createProgress: (progress: TablesInsert<'user_question_progress'>) => Promise<void>;
-  updateProgress: (questionId: number, progress: TablesUpdate<'user_question_progress'>) => Promise<void>;
+  updateProgress: (
+    questionId: number,
+    progress: TablesUpdate<'user_question_progress'>
+  ) => Promise<void>;
   deleteProgress: (questionId: number) => Promise<void>;
   resetProgress: (questionId: number) => Promise<void>;
 }
@@ -111,7 +114,7 @@ export const useProgressStore = create<ProgressState>(set => ({
       .update({
         status: 'not started',
         times_solved: 0,
-        last_solved_at: null
+        last_solved_at: null,
       })
       .eq('question_id', questionId)
       .eq('user_id', user.id)
