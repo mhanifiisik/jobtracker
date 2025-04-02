@@ -7,7 +7,7 @@ import { useJobsStore } from '@/store/jobs';
 import { JOB_STATUSES } from '@/constants/job-statuses.constant';
 import type { Job } from '@/types/db-tables';
 
-export default function JobsPage() {
+function JobsPage() {
 
   const { jobs, fetchJobs,deleteJob, isLoading, updateJob } = useJobsStore();
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -58,7 +58,8 @@ export default function JobsPage() {
   }, [filteredJobs, sortBy]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full">
+      <main className="mx-auto max-w-[100rem] px-6 py-8">
       <div className="mb-8">
         <h1 className="text-foreground text-3xl font-bold mb-2">Job Applications Tracker</h1>
         <p className="text-muted-foreground">Import and manage your job applications from CSV files</p>
@@ -130,6 +131,9 @@ export default function JobsPage() {
           ))}
         </div>
       )}
+      </main>
     </div>
   );
 }
+
+export default JobsPage;

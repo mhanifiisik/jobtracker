@@ -28,8 +28,8 @@ const CategoriesPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
+      <div className="w-full">
+      <main className="mx-auto max-w-[100rem] px-6 py-8">      <div className="mb-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -74,6 +74,7 @@ const CategoriesPage = () => {
           </div>
         </div>
       </div>
+    </main>
     </div>
   );
 };

@@ -1,129 +1,115 @@
-import { questionSchema } from "@/schemas/question-schemas";
-import { useAuthStore } from "@/store/auth";
-import { useQuestionsStore } from "@/store/questions";
-import type { Question } from "@/types/db-tables";
-import { useFormik } from "formik";
-import { Plus } from "lucide-react";
-import { useEffect } from "react";
-
+import { useQuestionsStore } from '@/store/questions';
+import { useAuthStore } from '@/store/auth';
+import { Button } from '@/components/ui/button';
+import toast from 'react-hot-toast';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import type { Question } from '@/types/db-tables';
+import { useFormik } from 'formik';
+import { questionSchema } from '@/schemas/question-schemas';
 
 
 
 export const QuestionForm = () => {
+  const { categories, createQuestion, fetchQuestions } = useQuestionsStore();
   const { user } = useAuthStore();
-  const userId = user?.id;
+
 
   const formik = useFormik({
     initialValues: {
       title: '',
       url: '',
-      difficulty: 'easy' as Question['difficulty'],
-      category_id: 0,
+      difficulty: 'medium',
       notes: '',
-      user_id: userId ?? '',
+      category: '',
     },
     validationSchema: questionSchema,
-    onSubmit: async (values) => {
-      await createQuestion(values);
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await createQuestion({
+          title: values.title,
+          url: values.url,
+          difficulty: values.difficulty as Question['difficulty'],
+          notes: values.notes,
+          category_id: categories.find(category => category.name === values.category)?.id ?? null,
+          user_id: user?.id ?? ''
+        });
+        await fetchQuestions();
+        toast.success('Question added successfully!');
+        resetForm();
+      } catch {
+        toast.error('Failed to add question');
+      }
     },
   });
 
-  const { categories , fetchCategories ,createQuestion} = useQuestionsStore();
-
-  useEffect(() => {
-    void fetchCategories();
-  }, [fetchCategories]);
-
-
-
-
-
   return (
     <form onSubmit={formik.handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="title" className="text-foreground mb-2 block text-sm font-medium">
-          Question Title
-        </label>
-        <input
-          type="text"
+      <div className="space-y-2">
+        <Label className="text-foreground" htmlFor="title">Title</Label>
+        <Input
           id="title"
           value={formik.values.title}
           onChange={formik.handleChange}
-          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-          placeholder="e.g., Two Sum, Valid Parentheses"
           required
         />
       </div>
 
-      <div>
-        <label htmlFor="url" className="text-foreground mb-2 block text-sm font-medium">
-          LeetCode URL (Optional)
-        </label>
-        <input
-          type="url"
+      <div className="space-y-2">
+        <Label className="text-foreground" htmlFor="url">URL</Label>
+        <Input
           id="url"
+          type="url"
           value={formik.values.url}
           onChange={formik.handleChange}
-          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-          placeholder="https://leetcode.com/problems/..."
         />
       </div>
 
-      <div>
-        <label htmlFor="difficulty" className="text-foreground mb-2 block text-sm font-medium">
-          Difficulty
-        </label>
-        <select
-          id="difficulty"
-          value={formik.values.difficulty ?? 'easy'}
-          onChange={formik.handleChange}
-          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-        >
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+      <div className="space-y-2">
+        <Label className="text-foreground" htmlFor="difficulty">Difficulty</Label>
+        <Select value={formik.values.difficulty} onValueChange={formik.handleChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select difficulty" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="easy">Easy</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="hard">Hard</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div>
-        <label htmlFor="category" className="text-foreground mb-2 block text-sm font-medium">
-          Category (Optional)
-        </label>
-        <select
-          id="category"
-          value={formik.values.category_id}
-          onChange={(e) => formik.setFieldValue('category_id', Number(e.target.value))}
-          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-        >
-          <option value="">Select a category</option>
-          {categories.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2">
+        <Label htmlFor="category">Category</Label>
+        <Select value={formik.values.category} onValueChange={formik.handleChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">None</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id.toString()}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div>
-        <label htmlFor="notes" className="text-foreground mb-2 block text-sm font-medium">
-          Notes (Optional)
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
           id="notes"
           value={formik.values.notes}
           onChange={formik.handleChange}
-          className="bg-background border-input focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-          rows={4}
-          placeholder="Add any notes or hints about the question..."
         />
       </div>
 
-      <button
-        type="submit"
-        className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-white transition-colors"
-      >
-        <Plus size={16} /> Add Question
-      </button>
+      <Button type="submit" className="w-full">
+        Add Question
+      </Button>
     </form>
   );
 };

@@ -9,7 +9,7 @@ import useTheme from '@/hooks/use-theme';
 import Loader from '@/components/ui/loading';
 import { AuthForm } from '@/constants/auth-form.enum';
 
-const AuthPage = () => {
+function AuthPage() {
   const [formType, setFormType] = useState<AuthForm>(AuthForm.SIGN_IN);
   const { theme, handleThemeChange } = useTheme();
   const { session, isLoading } = useAuthStore();

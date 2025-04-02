@@ -24,7 +24,7 @@ export const CategoryForm = () => {
 
     try {
       await createCategory({ ...values, user_id: userId });
-      resetForm(); // Reset form after successful submission
+      resetForm();
     } catch (error) {
       console.error("Failed to create category", error);
     }

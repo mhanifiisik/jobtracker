@@ -9,12 +9,12 @@ import { useInterviewsStore } from '@/store/interviews';
 import { useProgressStore } from '@/store/progress';
 import { useQuestionsStore } from '@/store/questions';
 import { useTasksStore } from '@/store/tasks';
-import { useCallback, useEffect } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-export default function DashboardPage() {
+ function DashboardPage() {
   const { user } = useAuthStore();
-
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState<boolean>(false);
   const { applications, fetchApplications } = useApplicationsStore();
   const { interviews, fetchInterviews } = useInterviewsStore();
   const { questions, fetchQuestions } = useQuestionsStore();
@@ -33,21 +33,24 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
-  const statsData = {
-    totalApplications: applications.length,
-    pendingApplications: applications.filter(app => app.status === 'applied').length,
-    rejectedApplications: applications.filter(app => app.status === 'rejected').length,
-    totalInterviews: interviews.length,
-    upcomingInterviews: interviews.filter(i => i.status === 'scheduled').length,
-    totalQuestions: questions.length,
-    solvedQuestions: progress.filter(p => p.status === 'solved').length,
-  };
+  const statsData = useMemo(() => {
+    return {
+      totalApplications: applications.length,
+      pendingApplications: applications.filter(app => app.status === 'applied').length,
+      rejectedApplications: applications.filter(app => app.status === 'rejected').length,
+      totalInterviews: interviews.length,
+      upcomingInterviews: interviews.filter(i => i.status === 'scheduled').length,
+      totalQuestions: questions.length,
+      solvedQuestions: progress.filter(p => p.status === 'solved').length,
+    };
+  }, [applications, interviews, questions, progress]);
 
-    const progressData = {
-    totalQuestions: questions.length,
-    solvedQuestions: progress.filter(p => p.status === 'solved').length,
-    attemptingQuestions: progress.filter(p => p.status === 'attempted').length,
-    difficulties: [
+  const progressData = useMemo(() => {
+    return {
+      totalQuestions: questions.length,
+      solvedQuestions: progress.filter(p => p.status === 'solved').length,
+      attemptingQuestions: progress.filter(p => p.status === 'attempted').length,
+      difficulties: [
       { name: 'Easy', textColor: 'text-chart-1 dark:text-chart-1/90' },
       { name: 'Medium', textColor: 'text-chart-2 dark:text-chart-2/90' },
       { name: 'Hard', textColor: 'text-chart-3 dark:text-chart-3/90' },
@@ -62,10 +65,11 @@ export default function DashboardPage() {
         total,
         solved,
       };
-    }),
-  };
+      }),
+    };
+  }, [questions, progress]);
 
-  const recentApplications = applications
+  const recentApplications = useMemo(() => applications
     .sort((a, b) => new Date(b.date_applied).getTime() - new Date(a.date_applied).getTime())
     .slice(0, 5)
     .map(app => ({
@@ -75,24 +79,24 @@ export default function DashboardPage() {
       location: app.location,
       status: app.status,
       applied_date: app.date_applied,
-    }));
+    })), [applications]);
 
-  const upcomingInterviews = interviews
+  const upcomingInterviews = useMemo(() => interviews
     .filter(i => i.status === 'scheduled')
     .sort((a, b) => new Date(a.interview_date).getTime() - new Date(b.interview_date).getTime())
-    .slice(0, 5);
+    .slice(0, 5), [interviews]);
 
-  const handleToggleTask = async (taskId: number) => {
+  const handleToggleTask = useCallback(async (taskId: number) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
     await updateTask(taskId, { status: newStatus });
-  };
+  }, [tasks, updateTask]);
 
-  const handleDeleteTask = async (taskId: number) => {
+  const handleDeleteTask = useCallback(async (taskId: number) => {
     await deleteTask(taskId);
-  };
+  }, [deleteTask]);
 
   return (
     <div className="w-full">
@@ -104,7 +108,9 @@ export default function DashboardPage() {
           <p className="mt-1 text-gray-600">Here's what's happening with your job search today.</p>
         </div>
 
-        <StatsSection data={statsData} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <StatsSection data={statsData} />
+        </Suspense>
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
           <div className="space-y-8">
@@ -115,15 +121,32 @@ export default function DashboardPage() {
                   View All
                 </Link>
               </div>
-              <RecentApplications applications={recentApplications} />
+
+                <RecentApplications applications={recentApplications} />
+
             </section>
 
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Tasks</h3>
-                Add Task
+                <button
+                  type="button"
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+                  onClick={() => {
+                    setIsTaskFormOpen(true);
+                  }}
+                >
+                  Add Task
+                </button>
               </div>
-              <TasksWidget tasks={tasks} onToggleTask={handleToggleTask} onDeleteTask={handleDeleteTask}  onAddTask={createTask}/>
+                <TasksWidget
+                  tasks={tasks}
+                  isOpen={isTaskFormOpen}
+                  onOpenChange={setIsTaskFormOpen}
+                  onToggleTask={handleToggleTask}
+                  onDeleteTask={handleDeleteTask}
+                  onAddTask={createTask}
+                />
             </section>
           </div>
 
@@ -136,7 +159,9 @@ export default function DashboardPage() {
                   Schedule Interview
                 </Link>
               </div>
-              <UpcomingInterviews interviews={upcomingInterviews}   />
+              <Suspense fallback={<div>Loading...</div>}>
+                <UpcomingInterviews interviews={upcomingInterviews}   />
+              </Suspense>
             </section>
 
             <section>
@@ -147,7 +172,7 @@ export default function DashboardPage() {
                   View Questions
                 </Link>
               </div>
-              <ProgressCard data={progressData}  />
+                <ProgressCard data={progressData}  />
             </section>
           </div>
         </div>
@@ -155,3 +180,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+export default DashboardPage;

@@ -2,7 +2,8 @@ import type { TablesInsert, TablesUpdate } from '@/types/database';
 import supabase from '@/utils/supabase';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
-import type { Question, QuestionCategory } from '@/types/db-tables';
+import type { QuestionCategory } from '@/types/db-tables';
+import type { Question } from '@/types/db-tables';
 
 interface QuestionsState {
   questions: Question[];

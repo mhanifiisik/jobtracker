@@ -1,186 +1,352 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { Plus, Search } from 'lucide-react';
-import type {  QuestionDifficulty } from '@/types/leetcode';
-import { QuestionCard } from '@/components/leetcode/question-card';
-import toast from 'react-hot-toast';
-import { useQuestionsStore } from '@/store/questions';
-import { useProgressStore } from '@/store/progress';
+import { useEffect, useMemo, useState, useRef } from "react"
+import { Plus, Search, Filter,  ChevronDown } from "lucide-react"
+import { useProgressStore } from "@/store/progress"
+import { useQuestionsStore } from "@/store/questions"
+import type { Question } from "@/types/db-tables"
+import { AddQuestionDialog } from "@/components/leetcode/add-question-dialog"
+import { Link } from "react-router"
+import QuestionsSection from "@/components/leetcode/questions-section"
 
-const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
-const LeetCodePage = () => {
-  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+function LeetCodePage() {
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Question["difficulty"] | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const [isDifficultyDropdownOpen, setIsDifficultyDropdownOpen] = useState(false)
 
-  const { questions, categories, fetchQuestions, fetchCategories } = useQuestionsStore();
-  const { progress, updateProgress } = useProgressStore();
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
+  const difficultyDropdownRef = useRef<HTMLDivElement>(null)
+
+  const { questions, categories, fetchQuestions, fetchCategories } = useQuestionsStore()
+  const {progress, fetchProgress, updateProgress } = useProgressStore()
 
   useEffect(() => {
-    void fetchQuestions();
-    void fetchCategories();
-  }, [fetchQuestions, fetchCategories]);
+    void fetchQuestions()
+    void fetchCategories()
+    void fetchProgress()
+  }, [fetchQuestions, fetchCategories, fetchProgress])
 
-  const handleMarkAsSolved = async (questionId: number) => {
-    const existingProgress = progress.find(p => p.question_id === questionId);
-
-    try {
-      await updateProgress(questionId, {
-        status: 'solved',
-        times_solved: (existingProgress?.times_solved ?? 0) + 1, // Increment times solved
-        last_solved_at: new Date().toISOString()
-      });
-      toast.success('Question marked as solved!');
-    } catch (error) {
-      toast.error('Failed to update progress');
-      console.error(error);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false)
+      }
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target as Node)) {
+        setIsDifficultyDropdownOpen(false)
+      }
     }
-  };
 
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  const stats = useMemo(() => {
+    const total = questions.length
+    const solved = progress.filter((q) => q.status === "solved").length
+
+    const totalTimesSolved= progress.reduce((sum, q) => sum + (q.times_solved ?? 0), 0)
+
+
+    const easy = questions.filter((q) => q.difficulty === "easy").length
+    const medium = questions.filter((q) => q.difficulty === "medium").length
+    const hard = questions.filter((q) => q.difficulty === "hard").length
+
+    const easySolved = progress.filter(
+      (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "easy" && q.status === "solved",
+    ).length
+    const mediumSolved = progress.filter(
+      (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "medium" && q.status === "solved",
+    ).length
+    const hardSolved = progress.filter(
+        (q) => q.question_id && questions.find((q) => q.id === q.id)?.difficulty === "hard" && q.status === "solved",
+    ).length
+
+    return {
+      total,
+      solved,
+      totalProgress: total > 0 ? (solved / total) * 100 : 0,
+      easy,
+      medium,
+      hard,
+      easySolved,
+      mediumSolved,
+      hardSolved,
+      easyProgress: easy > 0 ? (easySolved / easy) * 100 : 0,
+      mediumProgress: medium > 0 ? (mediumSolved / medium) * 100 : 0,
+      hardProgress: hard > 0 ? (hardSolved / hard) * 100 : 0,
+      totalTimesSolved,
+    }
+  }, [questions,progress])
+
+  // Filter questions based on search, difficulty, and category
   const filteredQuestions = useMemo(() => {
-    return questions.filter(
-      q =>
-        (selectedDifficulty === 'ALL' || q.difficulty === selectedDifficulty) &&
-        q.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [questions, selectedDifficulty, searchQuery]);
+    return questions.filter((question) => {
+      const matchesSearch = searchQuery ? question.title.toLowerCase().includes(searchQuery.toLowerCase()) : true
+      const matchesDifficulty = selectedDifficulty ? question.difficulty === selectedDifficulty : true
+      const matchesCategory = selectedCategory ? question.category_id === selectedCategory : true
 
-  // Restructured to return an array of category objects with their questions
-  const categorizedQuestions = useMemo(() => {
-    return categories
-      .map(category => {
-        const categoryQuestions = filteredQuestions.filter(q => q.category_id === category.id);
-        return {
-          category,
-          questions: categoryQuestions
-        };
-      })
-      .filter(item => item.questions.length > 0); // Only keep categories with questions
-  }, [categories, filteredQuestions]);
+      return matchesSearch && matchesDifficulty && matchesCategory
+    })
+  }, [questions, searchQuery, selectedDifficulty, selectedCategory])
 
-  const uncategorizedQuestions = useMemo(() => {
-    return filteredQuestions.filter(q => !q.category_id);
-  }, [filteredQuestions]);
+
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-foreground text-2xl font-bold">LeetCode Progress Tracker</h1>
-          <Link
-            to="/dashboard/leetcode/add"
-            className="bg-primary hover:bg-primary/90 flex items-center gap-2 rounded px-4 py-2 text-white transition-colors"
-          >
-            <Plus size={16} /> Add Question
-          </Link>
+       <div className="w-full">
+      <main className="mx-auto max-w-[100rem] px-6 py-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">LeetCode Progress</h1>
+          <p className="text-gray-500 mt-1">Track your coding interview preparation</p>
         </div>
+        <button
+        type='button'
+          onClick={() => {
+            setIsAddDialogOpen(true)
+          }}
+          className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Question
+        </button>
+      </div>
 
-        <div className="mb-6 flex flex-col gap-4 md:flex-row">
-          <div className="bg-card flex flex-1 items-center rounded border px-3 py-2">
-            <Search size={18} className="text-muted-foreground mr-2" />
-            <input
-              type="text"
-              placeholder="Search questions..."
-              className="w-full border-none bg-transparent outline-none"
-              value={searchQuery}
-              onChange={e => {
-                setSearchQuery(e.target.value);
-              }}
-            />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Overall Progress Card */}
+        <div className="bg-white rounded-lg border shadow-sm p-4">
+          <div className="pb-2">
+            <h3 className="text-lg font-medium">Overall Progress</h3>
+          </div>
+          <div>
+            <div className="flex items-end justify-between">
+              <div className="text-3xl font-bold">
+                {stats.solved}/{stats.total}
+              </div>
+              <div className="text-xl font-medium text-gray-500">{stats.totalProgress.toFixed(0)}%</div>
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded-full mt-2">
+              <div
+                className="h-2 bg-blue-600 rounded-full transition-all duration-300"
+                style={{ width: `${stats.totalProgress}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedDifficulty('ALL');
-            }}
-            className={`rounded px-4 py-2 whitespace-nowrap ${
-              selectedDifficulty === 'ALL' ? 'bg-primary text-white' : 'bg-card border'
-            }`}
-          >
-            All Difficulties
-          </button>
-          {DIFFICULTIES.map(difficulty => (
-            <button
-              key={difficulty}
-              type="button"
-              onClick={() => {
-                setSelectedDifficulty(difficulty);
-              }}
-              className={`rounded px-4 py-2 whitespace-nowrap ${
-                selectedDifficulty === difficulty ? 'bg-primary text-white' : 'bg-card border'
-              }`}
-            >
-              {difficulty}
-            </button>
-          ))}
+        {/* Easy Card */}
+        <div className="bg-white rounded-lg border shadow-sm p-4">
+          <div className="pb-2">
+            <h3 className="text-lg font-medium text-green-500">Easy</h3>
+          </div>
+          <div>
+            <div className="flex items-end justify-between">
+              <div className="text-3xl font-bold">
+                {stats.easySolved}/{stats.easy}
+              </div>
+              <div className="text-xl font-medium text-gray-500">{stats.easyProgress.toFixed(0)}%</div>
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded-full mt-2">
+              <div
+                className="h-2 bg-green-500 rounded-full transition-all duration-300"
+                style={{ width: `${stats.easyProgress}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-foreground text-xl font-semibold">Learning Path</h2>
-          <Link
-            to="/dashboard/leetcode/categories"
-            className="bg-card hover:bg-muted flex items-center gap-1 rounded border px-4 py-2"
-          >
-            <Plus size={14} /> Manage Categories
-          </Link>
+        {/* Medium Card */}
+        <div className="bg-white rounded-lg border shadow-sm p-4">
+          <div className="pb-2">
+            <h3 className="text-lg font-medium text-yellow-500">Medium</h3>
+          </div>
+          <div>
+            <div className="flex items-end justify-between">
+              <div className="text-3xl font-bold">
+                {stats.mediumSolved}/{stats.medium}
+              </div>
+              <div className="text-xl font-medium text-gray-500">{stats.mediumProgress.toFixed(0)}%</div>
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded-full mt-2">
+              <div
+                className="h-2 bg-yellow-500 rounded-full transition-all duration-300"
+                style={{ width: `${stats.mediumProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hard Card */}
+        <div className="bg-white rounded-lg border shadow-sm p-4">
+          <div className="pb-2">
+            <h3 className="text-lg font-medium text-red-500">Hard</h3>
+          </div>
+          <div>
+            <div className="flex items-end justify-between">
+              <div className="text-3xl font-bold">
+                {stats.hardSolved}/{stats.hard}
+              </div>
+              <div className="text-xl font-medium text-gray-500">{stats.hardProgress.toFixed(0)}%</div>
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded-full mt-2">
+              <div
+                className="h-2 bg-red-500 rounded-full transition-all duration-300"
+                style={{ width: `${stats.hardProgress}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {filteredQuestions.length === 0 ? (
-        <div className="border-muted bg-background flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground mb-4 text-lg">No questions found</p>
-          <p className="text-muted-foreground text-sm">Add your first question to start tracking</p>
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search questions..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+            }}
+            className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
-      ) : (
-        <div className="space-y-8">
-          {/* Render categorized questions */}
-          {categorizedQuestions.map(({ category, questions }) => (
-            <div key={category.id} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-foreground text-lg font-semibold">{category.name}</h3>
-                <div className="text-muted-foreground text-sm">
-                  {questions.length} questions
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {questions.map(question => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    onMarkAsSolved={handleMarkAsSolved}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
 
-          {/* Render uncategorized questions */}
-          {uncategorizedQuestions.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-foreground text-lg font-semibold">Uncategorized</h3>
-                <div className="text-muted-foreground text-sm">
-                  {uncategorizedQuestions.length} questions
+        <div className="flex gap-2">
+          {/* Category Dropdown */}
+          <div className="relative" ref={categoryDropdownRef}>
+            <button
+            type='button'
+              onClick={() => {
+                setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+              }}
+              className="inline-flex items-center justify-between w-[180px] px-4 py-2 text-sm font-medium bg-white border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {selectedCategory ? categories.find((c) => c.id === selectedCategory)?.name : "All Categories"}
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </button>
+
+            {isCategoryDropdownOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                <div className="py-1">
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSelectedCategory(null)
+                      setIsCategoryDropdownOpen(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    All Categories
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      type='button'
+                      onClick={() => {
+                        setSelectedCategory(category.id)
+                        setIsCategoryDropdownOpen(false)
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+
+                  <Link
+                    to="/dashboard/leetcode/categories"
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center justify-center gap-2"
+                  >
+                    Add Category <Plus className="ml-2 h-4 w-4" />
+                  </Link>
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {uncategorizedQuestions.map(question => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    onMarkAsSolved={handleMarkAsSolved}
-                  />
-                ))}
+            )}
+          </div>
+
+          {/* Difficulty Dropdown */}
+          <div className="relative" ref={difficultyDropdownRef}>
+            <button
+            type='button'
+              onClick={() => {
+                setIsDifficultyDropdownOpen(!isDifficultyDropdownOpen)
+              }}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-white border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <Filter className="h-4 w-4" />
+              {selectedDifficulty
+                ? selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)
+                : "Difficulty"}
+            </button>
+
+            {isDifficultyDropdownOpen && (
+              <div className="absolute right-0 z-10 mt-1 w-40 bg-white border rounded-md shadow-lg">
+                <div className="py-1">
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSelectedDifficulty(null)
+                      setIsDifficultyDropdownOpen(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    All Difficulties
+                  </button>
+                  <button
+                  type='button'
+                    onClick={() => {
+                      setSelectedDifficulty("easy")
+                      setIsDifficultyDropdownOpen(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    Easy
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSelectedDifficulty("medium")
+                      setIsDifficultyDropdownOpen(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    Medium
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSelectedDifficulty("hard")
+                      setIsDifficultyDropdownOpen(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    Hard
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      <QuestionsSection
+        questions={filteredQuestions}
+        categories={categories}
+        progress={progress}
+        updateProgress={updateProgress}
+        setIsAddDialogOpen={setIsAddDialogOpen}
+      />
+
+      <AddQuestionDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+    </main>
     </div>
-  );
-};
+  )
+}
+
 
 export default LeetCodePage;

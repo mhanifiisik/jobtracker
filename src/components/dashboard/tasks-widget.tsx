@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {  Trash2 } from 'lucide-react';
 import type{ Task } from '@/types/db-tables';
 import TaskForm from '@/components/forms/task-form';
@@ -12,6 +12,8 @@ interface GroupedTasks {
 
 interface TasksWidgetProps {
   tasks: Task[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   onAddTask?: (task: Omit<Task, 'id' | 'created_at'>) => void;
   onDeleteTask?: (taskId: number) => void;
   onToggleTask?: (taskId: number) => void;
@@ -19,12 +21,13 @@ interface TasksWidgetProps {
 
 export default function TasksWidget({
   tasks,
+  isOpen,
+  onOpenChange,
   onAddTask,
   onDeleteTask,
   onToggleTask
 }: TasksWidgetProps) {
   const { user } = useAuthStore();
-  const [isAddingTask, setIsAddingTask] = useState<boolean>(false);
 
   const groupedTasks = useMemo(() => {
     return {
@@ -102,15 +105,15 @@ export default function TasksWidget({
               No tasks yet. Add your first task to get started.
             </div>
           )}
-          {isAddingTask && (
+          {isOpen && (
             <TaskForm
               userId={user?.id}
               onSubmit={(task) => {
                 onAddTask?.(task);
-                setIsAddingTask(false);
+                onOpenChange(false);
               }}
               onCancel={() => {
-                setIsAddingTask(false);
+                onOpenChange(false);
               }}
             />
           )}

@@ -1,78 +1,74 @@
-import type { Question} from '@/types/leetcode';
 import { Link } from 'react-router';
+import { CheckCircle2, ExternalLink, CircleDot, Circle } from 'lucide-react';
+import type{ Question, QuestionProgress } from '@/types/db-tables';
+
+
 
 interface QuestionCardProps {
   question: Question;
+  questionProgress?: QuestionProgress
   onMarkAsSolved: (questionId: number) => Promise<void>;
 }
 
+
 const difficultyColors = {
-  easy: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  hard: 'bg-red-100 text-red-800',
+  easy: 'text-green-500 dark:text-green-400',
+  medium: 'text-yellow-500 dark:text-yellow-400',
+  hard: 'text-red-500 dark:text-red-400',
 };
 
-const statusColors = {
-  'not started': 'bg-gray-100 text-gray-800',
-  attempted: 'bg-yellow-100 text-yellow-800',
-  solved: 'bg-green-100 text-green-800',
-};
-
-export const QuestionCard = ({ question, onMarkAsSolved }: QuestionCardProps) => {
-  const progress = question.user_question_progress;
-  const status = progress?.status ?? 'not started';
+export const QuestionCard = ({ question,questionProgress, onMarkAsSolved }: QuestionCardProps) => {
 
   return (
-    <div className="border-border bg-card rounded-lg border p-4 shadow-sm transition-shadow hover:shadow-md">
-      <h3 className="text-foreground mb-2 text-lg font-semibold">{question.title}</h3>
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {question.difficulty && (
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              difficultyColors[question.difficulty]
-            }`}
-          >
-            {question.difficulty}
-          </span>
+    <div className="group relative flex items-center gap-3 rounded-lg border bg-card px-4 py-2 shadow-sm transition-all hover:shadow-md">
+      <div className="flex min-w-[24px] items-center justify-center">
+        {questionProgress?.status === 'solved' ? (
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+        ) : questionProgress?.status === 'attempted' ? (
+          <CircleDot className="h-4 w-4 text-yellow-500" />
+        ) : (
+          <Circle className="h-4 w-4 text-gray-300" />
         )}
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-            statusColors[status]
-          }`}
-        >
-          {status}
+      </div>
+
+      <div className="flex min-w-[40px] items-center justify-center">
+        <span className="text-muted-foreground text-sm font-medium">{question.id}</span>
+      </div>
+
+      <div className="flex flex-1 items-center gap-2">
+        <h3 className="text-foreground truncate text-sm font-medium hover:text-primary">
+          {question.title}
+        </h3>
+        <span className={`text-xs font-medium ${difficultyColors[question.difficulty ?? 'easy']}`}>
+          {question.difficulty}
         </span>
-        {question.category_name && (
-          <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800">
-            {question.category_name}
-          </span>
-        )}
       </div>
 
-      <div className="text-muted-foreground mb-4 flex items-center justify-between text-sm">
-        <span>Solved: {progress?.times_solved ?? 0} times</span>
-        {progress?.last_solved_at && (
-          <span>
-            Last: {new Date(progress.last_solved_at).toLocaleDateString()}
-          </span>
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => onMarkAsSolved(question.id)}
-          className="bg-primary hover:bg-primary/90 flex-1 rounded py-2 text-white transition-colors"
-        >
-          Mark as Solved
-        </button>
-        <Link
-          to={`/dashboard/leetcode/${question.id}`}
-          className="bg-muted hover:bg-muted/80 rounded px-3 py-2 transition-colors"
-        >
-          Details
-        </Link>
+      <div className="flex items-center gap-4 text-xs">
+        <div className="text-muted-foreground flex items-center gap-2">
+          {questionProgress?.times_solved ? (
+            <span>Solved {questionProgress.times_solved} times</span>
+          ) : null}
+          {questionProgress?.last_solved_at && (
+            <span>• Last: {new Date(questionProgress.last_solved_at).toLocaleDateString()}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onMarkAsSolved(question.id)}
+            className="text-primary hover:text-primary/80 flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors hover:bg-primary/10"
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            Mark Solved
+          </button>
+          <Link
+            to={`/dashboard/leetcode/${question.id}`}
+            className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors hover:bg-muted"
+          >
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -3,21 +3,16 @@ import { Search, Trash, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import Table from '@/components/ui/table';
 import { useApplicationsStore } from '@/store/applications';
 import type { Tables } from '@/types/database';
+import { JOB_STATUSES } from '@/constants/job-statuses.constant';
 
 type JobApplication = Tables<'job_applications'>;
 
 const ITEMS_PER_PAGE = 10;
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'applied', label: 'Applied' },
-  { value: 'interviewing', label: 'Interviewing' },
-  { value: 'offered', label: 'Offered' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'archived', label: 'Archived' },
-] as const;
 
-export default function Applications() {
+
+
+
+function ApplicationsPage() {
   const [view, setView] = useState<'grid' | 'table'>('table');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -51,7 +46,7 @@ export default function Applications() {
     [updateApplication]
   );
 
-  const filteredApplications : Tables<'job_applications'>[] = useMemo(() => {
+  const filteredApplications= useMemo(() => {
       return applications.filter(app => {
       const matchesSearch = search.toLowerCase() === ''
         || app.company_name.toLowerCase().includes(search.toLowerCase())
@@ -105,7 +100,8 @@ export default function Applications() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full">
+      <main className="mx-auto max-w-[100rem] px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-foreground text-2xl font-bold">Applications</h1>
       </div>
@@ -140,9 +136,9 @@ export default function Applications() {
                 onChange={handleStatusFilterChange}
               >
                 <option value="all">All Status</option>
-                {STATUS_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {Object.values(JOB_STATUSES).map(option => (
+                  <option key={option} value={option}>
+                    {option}
                   </option>
                 ))}
               </select>
@@ -170,9 +166,6 @@ export default function Applications() {
               >
                 <TableIcon className="w-4 h-4" />
               </button>
-              <button type="button" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg">
-                Add Application
-              </button>
             </div>
           </div>
 
@@ -197,9 +190,9 @@ export default function Applications() {
                       void handleStatusChange(app.id, e.target.value as JobApplication['status']);
                     }}
                   >
-                    {STATUS_OPTIONS.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
+                    {Object.values(JOB_STATUSES).map(option => (
+                      <option key={option} value={option}>
+                        {option}
                       </option>
                     ))}
                   </select>
@@ -233,9 +226,9 @@ export default function Applications() {
                           void handleStatusChange(application.id, e.target.value as JobApplication['status']);
                         }}
                       >
-                        {STATUS_OPTIONS.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
+                        {Object.values(JOB_STATUSES).map(option => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
                         ))}
                       </select>
@@ -247,6 +240,9 @@ export default function Applications() {
           )}
         </div>
       )}
+      </main>
     </div>
   );
 }
+
+export default ApplicationsPage;
