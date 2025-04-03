@@ -3,6 +3,7 @@ import type { TablesInsert, TablesUpdate } from '@/types/database';
 import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
+import toast from 'react-hot-toast';
 
 interface DocumentsState {
   documents: Document[];
@@ -51,6 +52,7 @@ export const useDocumentsStore = create<DocumentsState>(set => ({
         isLoading: false,
         documents: [...state.documents, ...data],
       }));
+      toast.success('Document created successfully');
     }
   },
   updateDocument: async (id: number, document: TablesUpdate<'documents'>) => {
@@ -73,6 +75,7 @@ export const useDocumentsStore = create<DocumentsState>(set => ({
         isLoading: false,
         documents: state.documents.map(doc => (doc.id === id ? data[0] : doc)),
       }));
+      toast.success('Document updated successfully');
     }
   },
   deleteDocument: async (id: number) => {
@@ -90,6 +93,7 @@ export const useDocumentsStore = create<DocumentsState>(set => ({
         isLoading: false,
         documents: state.documents.filter(doc => doc.id !== id),
       }));
+      toast.success('Document deleted successfully');
     }
   },
 }));

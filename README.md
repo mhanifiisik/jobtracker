@@ -1,4 +1,3 @@
-
 # JOB TRACKER
 
 A web application that help to users to track their job hunting progress including the leetcode and job applicaitons
@@ -13,16 +12,13 @@ A web application that help to users to track their job hunting progress includi
 - Vite
 - Zustand
 
-
 ## TODO
-- [X] Dockerize the app
-- [ ] Suspense with React 19
-- [ ] Error Boundary
-- [ ] React 19 Server Components
-- [ ] Notification System
-- [ ] Add tests
+
+- [x] Dockerize the app
+- [x] Suspense with React 19
+- [x] Error Boundary
+- [x] Notification System
 - [ ] SEO Optimized
-
-
-
-
+- [ ] Add tests
+- [ ] Add analytics
+- [ ] Add i18n

@@ -2,9 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './utils/session-provider';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router';
 import { ThemeProvider } from './utils/theme-provider';
-import NotificationProvider from './utils/notification-provider';
 import { lazy, Suspense } from 'react';
 import Loader from './components/ui/loading';
+import { ErrorBoundary } from './components/error-boundary';
+import { Toaster } from 'react-hot-toast';
 
 const queryClient = new QueryClient();
 const DashboardPage = lazy(() => import('./pages/dashboard'));
@@ -21,10 +22,10 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <NotificationProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <Suspense fallback={<Loader/>}>
+        <AuthProvider>
+          <BrowserRouter>
+            <ErrorBoundary>
+              <Suspense fallback={<Loader />}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -42,9 +43,10 @@ const App = () => {
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </Suspense>
-            </BrowserRouter>
-          </AuthProvider>
-        </NotificationProvider>
+            </ErrorBoundary>
+            <Toaster position="top-right" />
+          </BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

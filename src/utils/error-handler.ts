@@ -1,104 +1,30 @@
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { ErrorInfo } from 'react';
 import toast from 'react-hot-toast';
-import type { AppError } from '@/types/errors';
-import { ERROR_MESSAGES } from '@/constants/error-messages';
-import { ErrorType } from '@/constants/error-type.enum';
 
-function isPostgrestError(error: unknown): error is PostgrestError {
-  return error instanceof Object && 'code' in error && 'message' in error && 'details' in error;
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public status?: number,
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
 }
 
-function isError(error: unknown): error is Error {
-  return error instanceof Error;
-}
-
-export const handleError = (error: unknown, silent = false): AppError => {
-  let appError: AppError = {
-    type: ErrorType.UNKNOWN,
-    message: ERROR_MESSAGES.UNKNOWN,
-    originalError: isError(error) ? error : new Error(String(error)),
-  };
-
-  if (isPostgrestError(error)) {
-    const postgrestError = error;
-    switch (postgrestError.code) {
-      case '23505':
-        appError = {
-          type: ErrorType.VALIDATION,
-          message: ERROR_MESSAGES.VALIDATION.DUPLICATE,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      case '23503':
-        appError = {
-          type: ErrorType.VALIDATION,
-          message: ERROR_MESSAGES.VALIDATION.FOREIGN_KEY,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      case '42P01':
-        appError = {
-          type: ErrorType.NOT_FOUND,
-          message: ERROR_MESSAGES.NOT_FOUND,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      case '42501':
-      case '42403':
-        appError = {
-          type: ErrorType.AUTHORIZATION,
-          message: ERROR_MESSAGES.AUTHORIZATION,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      case '3D000':
-      case '3F000':
-        appError = {
-          type: ErrorType.SERVER,
-          message: ERROR_MESSAGES.SERVER,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      case 'PGRST116':
-        appError = {
-          type: ErrorType.AUTHENTICATION,
-          message: ERROR_MESSAGES.AUTHENTICATION,
-          originalError: error,
-          code: postgrestError.code,
-        };
-        break;
-      default:
-        appError = {
-          type: ErrorType.UNKNOWN,
-          message: postgrestError.message || ERROR_MESSAGES.UNKNOWN,
-          originalError: error,
-          code: postgrestError.code,
-        };
-    }
-  } else if (isError(error)) {
-    if (error.message.includes('Failed to fetch') || error.message.includes('Network Error')) {
-      appError = {
-        type: ErrorType.NETWORK,
-        message: ERROR_MESSAGES.NETWORK,
-        originalError: error,
-      };
-    } else {
-      appError = {
-        type: ErrorType.UNKNOWN,
-        message: error.message || ERROR_MESSAGES.UNKNOWN,
-        originalError: error,
-      };
-    }
+export const handleError = (error: Error, errorInfo?: ErrorInfo) => {
+  console.error('Error caught by error boundary:', error);
+  if (errorInfo) {
+    console.error('Component stack:', errorInfo.componentStack);
   }
 
-  if (!silent) {
-    toast.error(appError.message);
-  }
+  toast.error(error.message || 'An unexpected error occurred', {
+    duration: 3000, // 3 seconds
+    position: 'bottom-right',
+  });
+};
 
-  return appError;
+export const isAppError = (error: unknown): error is AppError => {
+  return error instanceof AppError;
 };
