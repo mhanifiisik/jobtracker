@@ -14,7 +14,7 @@ const formatDate = (dateString: string | null) => {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 
@@ -29,9 +29,9 @@ function QuestionsSection({
   questions,
   categories,
   progress,
-  setIsAddDialogOpen
-}:QuestionsSectionProps) {
-  const [activeTab, setActiveTab] = useState("all");
+  setIsAddDialogOpen,
+}: QuestionsSectionProps) {
+  const [activeTab, setActiveTab] = useState('all');
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -40,12 +40,12 @@ function QuestionsSection({
   const { user } = useAuthStore();
 
   const filteredQuestions = useMemo(() => {
-    return questions.filter((question) => {
-      if (activeTab === "all") return true;
-      if (activeTab === "solved")
-        return progress.find((p) => p.question_id === question.id)?.status === "solved";
-      if (activeTab === "unsolved")
-        return progress.find((p) => p.question_id === question.id)?.status !== "solved";
+    return questions.filter(question => {
+      if (activeTab === 'all') return true;
+      if (activeTab === 'solved')
+        return progress.find(p => p.question_id === question.id)?.status === 'solved';
+      if (activeTab === 'unsolved')
+        return progress.find(p => p.question_id === question.id)?.status !== 'solved';
       return true;
     });
   }, [questions, activeTab, progress]);
@@ -60,13 +60,17 @@ function QuestionsSection({
     }
   };
 
-  const handleStatusChange = async (questionId: number, newStatus: QuestionProgress["status"], incrementOnly: boolean = false) => {
+  const handleStatusChange = async (
+    questionId: number,
+    newStatus: QuestionProgress['status'],
+    incrementOnly: boolean = false
+  ) => {
     if (!user?.id) {
       console.error('User not authenticated');
       return;
     }
 
-    const existingProgress = progress.find((p) => p.question_id === questionId);
+    const existingProgress = progress.find(p => p.question_id === questionId);
     const now = new Date().toISOString();
 
     try {
@@ -83,8 +87,11 @@ function QuestionsSection({
           status: incrementOnly ? existingProgress.status : newStatus,
           times_solved: incrementOnly
             ? (existingProgress.times_solved ?? 0) + 1
-            : (newStatus === 'solved' ? (existingProgress.times_solved ?? 0) + 1 : existingProgress.times_solved),
-          last_solved_at: incrementOnly || newStatus === 'solved' ? now : existingProgress.last_solved_at,
+            : newStatus === 'solved'
+              ? (existingProgress.times_solved ?? 0) + 1
+              : existingProgress.times_solved,
+          last_solved_at:
+            incrementOnly || newStatus === 'solved' ? now : existingProgress.last_solved_at,
         });
       }
       setIsActionDropdownOpen(null);
@@ -93,31 +100,21 @@ function QuestionsSection({
     }
   };
 
-  // Function to get difficulty color
-  const getDifficultyColor = (difficulty: Question["difficulty"]) => {
-    if (difficulty === "easy") return "bg-green-600";
-    if (difficulty === "medium") return "bg-yellow-600";
-    if (difficulty === "hard") return "bg-red-600";
-    return "bg-gray-600";
+  const getDifficultyColor = (difficulty: Question['difficulty']) => {
+    if (difficulty === 'easy') return 'bg-green-600';
+    if (difficulty === 'medium') return 'bg-yellow-600';
+    if (difficulty === 'hard') return 'bg-red-600';
+    return 'bg-gray-600';
   };
 
-  // Define columns for the table
-  const columns = [
-    "Title",
-    "Difficulty",
-    "Category",
-    "Status",
-    "Times Solved",
-    "Last Solved"
-  ];
+  const columns = ['Title', 'Difficulty', 'Category', 'Status', 'Times Solved', 'Last Solved'];
 
-  // Define row render function
   const renderRow = (question: Question) => {
-    const category = categories.find((c) => c.id === question.category_id);
-    const questionProgress = progress.find((p) => p.question_id === question.id);
+    const category = categories.find(c => c.id === question.category_id);
+    const questionProgress = progress.find(p => p.question_id === question.id);
 
     return {
-      "Title": (
+      Title: (
         <div className="font-medium">
           {question.url ? (
             <a
@@ -133,39 +130,38 @@ function QuestionsSection({
           )}
         </div>
       ),
-      "Difficulty": (
+      Difficulty: (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getDifficultyColor(question.difficulty)}`}
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${getDifficultyColor(question.difficulty)}`}
         >
           {question.difficulty
             ? question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)
-            : "N/A"}
+            : 'N/A'}
         </span>
       ),
-      "Category": category ? category.name : "Uncategorized",
-      "Status": (
+      Category: category ? category.name : 'Uncategorized',
+      Status: (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            questionProgress?.status === "solved"
-              ? "bg-blue-100 text-blue-800"
-              : questionProgress?.status === "attempted"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            questionProgress?.status === 'solved'
+              ? 'bg-blue-100 text-blue-800'
+              : questionProgress?.status === 'attempted'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-gray-100 text-gray-800'
           }`}
         >
-          {questionProgress?.status === "solved"
-            ? "Solved"
-            : questionProgress?.status === "attempted"
-            ? "Attempted"
-            : "Not Started"}
+          {questionProgress?.status === 'solved'
+            ? 'Solved'
+            : questionProgress?.status === 'attempted'
+              ? 'Attempted'
+              : 'Not Started'}
         </span>
       ),
-      "Times Solved": questionProgress?.times_solved ?? 0,
-      "Last Solved": formatDate(questionProgress?.last_solved_at ?? null)
+      'Times Solved': questionProgress?.times_solved ?? 0,
+      'Last Solved': formatDate(questionProgress?.last_solved_at ?? null),
     };
   };
 
-  // Define actions for each row
   const actions = (question: Question) => (
     <div className="relative">
       <button
@@ -181,7 +177,7 @@ function QuestionsSection({
       </button>
 
       {isActionDropdownOpen === question.id && (
-        <div className="absolute right-0 z-10 mt-1 w-56 bg-white border rounded-md shadow-lg">
+        <div className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-white shadow-lg">
           <div className="py-1">
             <button
               type="button"
@@ -241,40 +237,40 @@ function QuestionsSection({
   );
 
   return (
-    <div className="bg-white rounded-lg border shadow-sm">
-      <div className="p-4 pb-0 border-b">
-        <div className="flex justify-between items-center">
+    <div className="bg-background rounded-lg border shadow-sm">
+      <div className="border-b p-4 pb-0">
+        <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">Questions</h3>
           <div className="flex space-x-1">
             <button
               type="button"
-              className={`px-3 py-1 text-sm font-medium rounded-md ${
-                activeTab === "all" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border hover:bg-gray-50"
+              className={`rounded-md px-3 py-1 text-sm font-medium ${
+                activeTab === 'all' ? 'bg-accent text-white' : 'bg-background border'
               }`}
               onClick={() => {
-                setActiveTab("all")
+                setActiveTab('all');
               }}
             >
               All
             </button>
             <button
               type="button"
-              className={`px-3 py-1 text-sm font-medium rounded-md ${
-                activeTab === "solved" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border hover:bg-gray-50"
+              className={`rounded-md px-3 py-1 text-sm font-medium ${
+                activeTab === 'solved' ? 'bg-accent text-white' : 'bg-background border'
               }`}
               onClick={() => {
-                setActiveTab("solved")
+                setActiveTab('solved');
               }}
             >
               Solved
             </button>
             <button
               type="button"
-              className={`px-3 py-1 text-sm font-medium rounded-md ${
-                activeTab === "unsolved" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border hover:bg-gray-50"
+              className={`rounded-md px-3 py-1 text-sm font-medium ${
+                activeTab === 'unsolved' ? 'bg-accent text-white' : 'bg-background border'
               }`}
               onClick={() => {
-                setActiveTab("unsolved")
+                setActiveTab('unsolved');
               }}
             >
               Unsolved
@@ -296,19 +292,19 @@ function QuestionsSection({
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="text-gray-500 mb-2">No questions found</div>
-            <p className="text-sm text-gray-500 max-w-md">
+            <div className="mb-2 text-gray-500">No questions found</div>
+            <p className="max-w-md text-sm text-gray-500">
               {questions.length === 0
-                ? "Add your first LeetCode question to start tracking your progress."
-                : "Try adjusting your filters or search query."}
+                ? 'Add your first LeetCode question to start tracking your progress.'
+                : 'Try adjusting your filters or search query.'}
             </p>
             {questions.length === 0 && (
               <button
                 type="button"
                 onClick={() => {
-                  setIsAddDialogOpen(true)
+                  setIsAddDialogOpen(true);
                 }}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="mt-4 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Your First Question
