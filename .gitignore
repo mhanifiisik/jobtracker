@@ -23,6 +23,7 @@ out/
 
 # Bundle analysis
 analyze-bundle.html
+analyze-source.svg
 stats.html
 bundle-analysis/
 webpack-bundle-analyzer/
