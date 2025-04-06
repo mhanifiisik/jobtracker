@@ -4,6 +4,7 @@ import { useAuthStore } from './auth';
 import supabase from '@/utils/supabase';
 import { useErrorStore } from './error-handler';
 import toast from 'react-hot-toast';
+
 interface ProgressState {
   progress: Tables<'user_question_progress'>[];
   isLoading: boolean;

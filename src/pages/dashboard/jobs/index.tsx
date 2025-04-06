@@ -1,75 +1,79 @@
 import JobCard from '@/components/job-card';
-import { Search, Upload } from 'lucide-react';
+import { Search, Upload, Filter, SlidersHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useJobsStore } from '@/store/jobs';
+import { useJobApplicationsStore } from '@/store/job-applications';
 import { JOB_STATUSES } from '@/constants/job-statuses.constant';
 import type { Job } from '@/types/db-tables';
-import { fetchJustJoinJobs, type JobData as JustJoinJob } from '@/utils/fetch-jobs';
+import { VirtuosoGrid } from 'react-virtuoso';
 
 function JobsPage() {
-  const { jobs, deleteJob, isLoading, updateJob } = useJobsStore();
+  const { jobs, isLoading, fetchJobs } = useJobsStore();
+  const { createOrUpdateJobApplicationFromJob, jobApplications } = useJobApplicationsStore();
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'date' | 'status'>('date');
-  const [justJoinJobs, setJustJoinJobs] = useState<JustJoinJob[]>([]);
-  const [totalJobs, setTotalJobs] = useState<number>(0);
-  const [isLoadingJobs, setIsLoadingJobs] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<'date' | 'status' | 'company'>('date');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    const fetchJobs = async () => {
-      setIsLoadingJobs(true);
-      try {
-        const jobs = await fetchJustJoinJobs();
-        setJustJoinJobs(jobs);
-        setTotalJobs(jobs.length);
-      } catch (error) {
-        console.error('Error fetching jobs:', error);
-        toast.error('Failed to fetch jobs');
-      } finally {
-        setIsLoadingJobs(false);
-      }
-    };
-
     void fetchJobs();
-  }, []);
+  }, [fetchJobs]);
 
-  const handleStatusChange = async (jobId: number, status: Job['status']) => {
+  const handleApply = async (job: Job) => {
     try {
-      await updateJob(jobId, { status });
-      toast.success('Job status updated successfully');
+      await createOrUpdateJobApplicationFromJob(job.id, 'applied');
+      toast.success('Successfully applied to the job!');
     } catch (error) {
-      console.error('Error updating job status:', error);
-      toast.error('Failed to update job status');
+      console.error('Error applying to job:', error);
+      toast.error('Failed to apply to the job');
     }
   };
 
-  const handleDelete = async (jobId: number) => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
-      try {
-        await deleteJob(jobId);
-        toast.success('Job deleted successfully');
-      } catch (error) {
-        console.error('Error deleting job:', error);
-        toast.error('Failed to delete job');
+  // Get unique sources from jobs
+  const jobSources = useMemo(() => {
+    const sources = new Set<string>();
+    jobs.forEach(job => {
+      if (job.source) {
+        sources.add(job.source);
       }
-    }
-  };
+    });
+    return Array.from(sources);
+  }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter(
-      job =>
+    return jobs.filter(job => {
+      // Apply search filter
+      const matchesSearch =
         job.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [jobs, searchQuery]);
+        job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (job.technologies?.some((tech: string) => {
+          return tech.toLowerCase().includes(searchQuery.toLowerCase());
+        }) ??
+          false);
+
+      // Apply status filter
+      const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
+
+      // Apply source filter
+      const matchesSource = sourceFilter === 'all' || job.source === sourceFilter;
+
+      return matchesSearch && matchesStatus && matchesSource;
+    });
+  }, [jobs, searchQuery, statusFilter, sourceFilter]);
 
   const sortedJobs = useMemo(() => {
     return filteredJobs.sort((a, b) => {
       if (sortBy === 'date') {
         return new Date(b.created_at ?? '').getTime() - new Date(a.created_at ?? '').getTime();
+      } else if (sortBy === 'status') {
+        return (a.status ?? '').localeCompare(b.status ?? '');
+      } else {
+        return a.company.localeCompare(b.company);
       }
-      return (a.status ?? '').localeCompare(b.status ?? '');
     });
   }, [filteredJobs, sortBy]);
 
@@ -77,84 +81,8 @@ function JobsPage() {
     <div className="w-full">
       <main className="mx-auto max-w-[100rem] px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-foreground mb-2 text-3xl font-bold">Job Applications Tracker</h1>
-          <p className="text-muted-foreground">
-            Import and manage your job applications from CSV files
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-foreground text-2xl font-semibold">JustJoin.it Jobs</h2>
-            <span className="text-muted-foreground text-sm">
-              Found {totalJobs.toLocaleString()} jobs
-            </span>
-          </div>
-
-          {isLoadingJobs ? (
-            <div className="border-muted bg-background flex h-96 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-              <div className="border-primary mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
-              <p className="text-muted-foreground text-lg">Loading jobs...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {justJoinJobs.map(job => (
-                <div
-                  key={job.data_index}
-                  className="border-muted bg-background rounded-lg border p-6 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div className="mb-4 flex items-center gap-4">
-                    {job.company_logo && job.company_logo !== 'N/A' && (
-                      <img
-                        src={job.company_logo}
-                        alt={`${job.company} logo`}
-                        className="h-12 w-12 rounded-full object-contain"
-                      />
-                    )}
-                    <div>
-                      <h3 className="text-foreground font-medium">{job.title}</h3>
-                      <p className="text-muted-foreground text-sm">{job.company}</p>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="text-muted-foreground mb-2 flex items-center gap-2 text-sm">
-                      <span>{job.location}</span>
-                      {job.remote_status.toLowerCase().includes('remote') && (
-                        <span className="bg-primary/10 text-primary rounded-full px-2 py-1 text-xs">
-                          Remote
-                        </span>
-                      )}
-                    </div>
-                    {job.salary && job.salary !== 'N/A' && (
-                      <div className="text-muted-foreground text-sm">{job.salary}</div>
-                    )}
-                    {job.skills.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {job.skills.map(skill => (
-                          <span
-                            key={skill}
-                            className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-xs"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <a
-                      href={job.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-primary hover:bg-primary/90 flex-1 rounded-md px-4 py-2 text-center text-sm text-white transition-colors"
-                    >
-                      Apply on JustJoin.it
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <h1 className="text-foreground mb-2 text-3xl font-bold">Available Jobs</h1>
+          <p className="text-muted-foreground">Browse and apply to available job opportunities</p>
         </div>
 
         <div className="mb-6 flex flex-col gap-4 md:flex-row">
@@ -165,7 +93,7 @@ function JobsPage() {
             />
             <input
               type="text"
-              placeholder="Search jobs by title or company..."
+              placeholder="Search jobs by title, company, description, or technologies..."
               className="border-input bg-background w-full rounded-md border py-2 pr-4 pl-10"
               value={searchQuery}
               onChange={e => {
@@ -175,16 +103,16 @@ function JobsPage() {
           </div>
 
           <div className="flex gap-2">
-            <select
-              className="border-input bg-background rounded-md border px-4 py-2"
-              value={sortBy}
-              onChange={e => {
-                setSortBy(e.target.value as 'date' | 'status');
+            <button
+              type="button"
+              onClick={() => {
+                setShowFilters(!showFilters);
               }}
+              className="border-input bg-background hover:bg-muted flex items-center gap-2 rounded-md border px-4 py-2 transition-colors"
             >
-              <option value="date">Sort by Date</option>
-              <option value="status">Sort by Status</option>
-            </select>
+              <SlidersHorizontal size={20} />
+              Filters
+            </button>
 
             <Link to="/dashboard/jobs/import">
               <button
@@ -198,47 +126,104 @@ function JobsPage() {
           </div>
         </div>
 
+        {showFilters && (
+          <div className="border-border bg-card mb-6 flex flex-wrap gap-4 rounded-lg border p-4">
+            <div className="flex items-center gap-2">
+              <Filter size={20} className="text-muted-foreground" />
+              <select
+                className="border-input bg-background rounded-md border px-4 py-2"
+                value={statusFilter}
+                onChange={e => {
+                  setStatusFilter(e.target.value);
+                }}
+              >
+                <option value="all">All Statuses</option>
+                {JOB_STATUSES.map(status => (
+                  <option key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                className="border-input bg-background rounded-md border px-4 py-2"
+                value={sourceFilter}
+                onChange={e => {
+                  setSourceFilter(e.target.value);
+                }}
+              >
+                <option value="all">All Sources</option>
+                {jobSources.map(source => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                className="border-input bg-background rounded-md border px-4 py-2"
+                value={sortBy}
+                onChange={e => {
+                  setSortBy(e.target.value as 'date' | 'status' | 'company');
+                }}
+              >
+                <option value="date">Sort by Date</option>
+                <option value="status">Sort by Status</option>
+                <option value="company">Sort by Company</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-foreground text-2xl font-semibold">Available Jobs</h2>
+          <span className="text-muted-foreground text-sm">
+            Found {filteredJobs.length.toLocaleString()} of {jobs.length.toLocaleString()} jobs
+          </span>
+        </div>
+
         {isLoading ? (
           <div className="border-muted bg-background flex h-96 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
             <div className="border-primary mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
-            <p className="text-muted-foreground text-lg">Loading your job applications...</p>
+            <p className="text-muted-foreground text-lg">Loading available jobs...</p>
+          </div>
+        ) : sortedJobs.length === 0 ? (
+          <div className="border-muted bg-background flex h-96 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+            <div className="bg-muted mb-4 rounded-full p-4">
+              <Upload size={32} className="text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground mb-2 text-lg">No jobs found</p>
+            <p className="text-muted-foreground mb-6 text-sm">
+              {searchQuery || statusFilter !== 'all' || sourceFilter !== 'all'
+                ? 'No jobs match your search criteria'
+                : 'Import jobs from a CSV file to get started'}
+            </p>
+            <Link to="/dashboard/jobs/import">
+              <button
+                type="button"
+                className="bg-primary hover:bg-primary/90 rounded-md px-6 py-2 text-white transition-colors"
+              >
+                Import Jobs
+              </button>
+            </Link>
           </div>
         ) : (
-          <div>
-            <h2 className="text-foreground mb-4 text-2xl font-semibold">Your Job Applications</h2>
-            {sortedJobs.length === 0 ? (
-              <div className="border-muted bg-background flex h-96 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                <div className="bg-muted mb-4 rounded-full p-4">
-                  <Upload size={32} className="text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground mb-2 text-lg">No job applications found</p>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  {searchQuery
-                    ? 'No jobs match your search criteria'
-                    : 'Import your job applications from a CSV file to get started'}
-                </p>
-                <Link to="/dashboard/jobs/import">
-                  <button
-                    type="button"
-                    className="bg-primary hover:bg-primary/90 rounded-md px-6 py-2 text-white transition-colors"
-                  >
-                    Import Your First Job
-                  </button>
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {sortedJobs.map(job => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onDelete={() => handleDelete(job.id)}
-                    onStatusChange={handleStatusChange}
-                    statusOptions={JOB_STATUSES.map(status => ({ value: status, label: status }))}
-                  />
-                ))}
-              </div>
-            )}
+          <div className="h-[calc(100vh-300px)]">
+            <VirtuosoGrid
+              totalCount={sortedJobs.length}
+              itemContent={index => (
+                <JobCard
+                  key={sortedJobs[index].id}
+                  job={sortedJobs[index]}
+                  onApply={handleApply}
+                  hasApplied={jobApplications.some(app => app.job_id === sortedJobs[index].id)}
+                />
+              )}
+            />
           </div>
         )}
       </main>

@@ -4,6 +4,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import supabase from '@/utils/supabase';
 import { useErrorStore } from './error-handler';
 import toast from 'react-hot-toast';
+
 interface AuthState {
   user: User | null;
   session: Session | null;

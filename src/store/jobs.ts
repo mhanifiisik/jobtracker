@@ -23,13 +23,7 @@ export const useJobsStore = create<JobsState>(set => ({
   fetchJobs: async () => {
     try {
       set({ isLoading: true, error: null });
-      const user = useAuthStore.getState().user;
-      if (!user) {
-        useErrorStore.getState().showError(new Error('User not authenticated'));
-        set({ isLoading: false, error: 'User not authenticated' });
-        return;
-      }
-      const { data, error } = await supabase.from('jobs').select('*').eq('user_id', user.id);
+      const { data, error } = await supabase.from('jobs').select('*');
       if (error) {
         useErrorStore.getState().showError(error);
         set({ isLoading: false, error: error.message });

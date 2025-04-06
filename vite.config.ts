@@ -79,5 +79,6 @@ export default defineConfig({
       usePolling: true,
     },
     cors: true,
+
   },
 });

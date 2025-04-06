@@ -3,8 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: production
     ports:
-      - "5173:5173"
+      - '9001:9001'
     environment:
       - NODE_ENV=production
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
@@ -14,7 +15,7 @@ services:
       - .:/app
       - /app/node_modules
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:9001/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -23,9 +24,10 @@ services:
   dev:
     build:
       context: .
-      target: build
+      dockerfile: Dockerfile
+      target: development
     ports:
-      - "5173:5173"
+      - '5173:5173'
     volumes:
       - .:/app
       - /app/node_modules
@@ -36,7 +38,7 @@ services:
       - VITE_BASE_URL=${VITE_BASE_URL}
     command: npm run dev
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5173"]
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5173']
       interval: 30s
       timeout: 10s
       retries: 3

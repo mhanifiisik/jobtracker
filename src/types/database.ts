@@ -1,4 +1,3 @@
-/* eslint-disable */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
@@ -119,39 +118,39 @@ export interface Database {
           created_at: string | null;
           date_applied: string;
           id: number;
-          job_id: number | null;
           location: string;
           position_title: string;
           response_date: string | null;
           status: Database['public']['Enums']['job_status'];
           updated_at: string | null;
           user_id: string;
+          job_id: number | null;
         };
         Insert: {
           company_name: string;
           created_at?: string | null;
           date_applied: string;
           id?: never;
-          job_id?: number | null;
           location: string;
           position_title: string;
           response_date?: string | null;
           status?: Database['public']['Enums']['job_status'];
           updated_at?: string | null;
           user_id: string;
+          job_id?: number | null;
         };
         Update: {
           company_name?: string;
           created_at?: string | null;
           date_applied?: string;
           id?: never;
-          job_id?: number | null;
           location?: string;
           position_title?: string;
           response_date?: string | null;
           status?: Database['public']['Enums']['job_status'];
           updated_at?: string | null;
           user_id?: string;
+          job_id?: number | null;
         };
         Relationships: [
           {
@@ -166,45 +165,69 @@ export interface Database {
       jobs: {
         Row: {
           company: string;
+          contract_type: string | null;
           created_at: string | null;
           description: string | null;
           id: number;
+          job_id: string | null;
+          job_type: string | null;
           location: string | null;
           position: string;
           published_date: string | null;
-          scraped_date: string | null;
+          remote_status: string | null;
+          salary: string | null;
+          scraped_at: string | null;
+          source: string | null;
           source_url: string | null;
           status: Database['public']['Enums']['job_status'] | null;
+          technologies: string[] | null;
+          title: string | null;
           updated_at: string | null;
-          user_id: string;
+          url: string | null;
         };
         Insert: {
           company: string;
+          contract_type?: string | null;
           created_at?: string | null;
           description?: string | null;
           id?: number;
+          job_id?: string | null;
+          job_type?: string | null;
           location?: string | null;
           position: string;
           published_date?: string | null;
-          scraped_date?: string | null;
+          remote_status?: string | null;
+          salary?: string | null;
+          scraped_at?: string | null;
+          source?: string | null;
           source_url?: string | null;
           status?: Database['public']['Enums']['job_status'] | null;
+          technologies?: string[] | null;
+          title?: string | null;
           updated_at?: string | null;
-          user_id: string;
+          url?: string | null;
         };
         Update: {
           company?: string;
+          contract_type?: string | null;
           created_at?: string | null;
           description?: string | null;
           id?: number;
+          job_id?: string | null;
+          job_type?: string | null;
           location?: string | null;
           position?: string;
           published_date?: string | null;
-          scraped_date?: string | null;
+          remote_status?: string | null;
+          salary?: string | null;
+          scraped_at?: string | null;
+          source?: string | null;
           source_url?: string | null;
           status?: Database['public']['Enums']['job_status'] | null;
+          technologies?: string[] | null;
+          title?: string | null;
           updated_at?: string | null;
-          user_id?: string;
+          url?: string | null;
         };
         Relationships: [];
       };
@@ -416,6 +439,7 @@ export interface Database {
       user_question_progress: {
         Row: {
           created_at: string | null;
+          id: number;
           last_solved_at: string | null;
           question_id: number;
           status: Database['public']['Enums']['user_question_progress_status_enum'] | null;
@@ -425,6 +449,7 @@ export interface Database {
         };
         Insert: {
           created_at?: string | null;
+          id?: number;
           last_solved_at?: string | null;
           question_id: number;
           status?: Database['public']['Enums']['user_question_progress_status_enum'] | null;
@@ -434,6 +459,7 @@ export interface Database {
         };
         Update: {
           created_at?: string | null;
+          id?: number;
           last_solved_at?: string | null;
           question_id?: number;
           status?: Database['public']['Enums']['user_question_progress_status_enum'] | null;
@@ -553,8 +579,8 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema['CompositeTypes']
-    | { schema: keyof Database },
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+    keyof PublicSchema['CompositeTypes'] | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database;
   }

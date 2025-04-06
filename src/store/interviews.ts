@@ -7,7 +7,6 @@ import type { Interview } from '@/types/db-tables';
 import { useErrorStore } from './error-handler';
 import toast from 'react-hot-toast';
 
-
 interface InterviewState {
   interviews: Interview[];
   upcomingInterviews: UpcomingInterview[];
