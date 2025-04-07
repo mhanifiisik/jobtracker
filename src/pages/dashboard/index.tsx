@@ -15,6 +15,7 @@ import { Link } from 'react-router';
  function DashboardPage() {
   const { user } = useAuthStore();
   const [isTaskFormOpen, setIsTaskFormOpen] = useState<boolean>(false);
+  const [isAddInterview,setIsAddInterview]=useState<boolean>(false)
   const { applications, fetchApplications } = useApplicationsStore();
   const { interviews, fetchInterviews } = useInterviewsStore();
   const { questions, fetchQuestions } = useQuestionsStore();

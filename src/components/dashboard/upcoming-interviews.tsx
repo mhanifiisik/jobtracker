@@ -1,15 +1,18 @@
 import type { Interview } from '@/types/db-tables';
 import { Video, Phone, Building2 } from 'lucide-react';
 import { formatDate } from '@/utils/format-date';
+import { type SetStateAction } from 'react';
 
 
 
 
 interface UpcomingInterviewsProps {
   interviews: Interview[];
+  isAddInterview:boolean;
+  setIsAddInterview:SetStateAction<boolean>
 }
 
-export default function UpcomingInterviews({ interviews }: UpcomingInterviewsProps) {
+export default function UpcomingInterviews({ interviews,isAddInterview,setIsAddInterview }: UpcomingInterviewsProps) {
   return (
     <div className="border-border overflow-hidden rounded-lg border bg-card">
       <div className="divide-border divide-y">
@@ -71,7 +74,10 @@ export default function UpcomingInterviews({ interviews }: UpcomingInterviewsPro
                 </>
               </div>
             </div>
-          ))
+          )
+          
+        )
+
         ) : (
           <div className="text-muted-foreground p-8 text-center">
             <Building2 className="mx-auto mb-3 h-8 w-8 opacity-50" />
@@ -79,6 +85,8 @@ export default function UpcomingInterviews({ interviews }: UpcomingInterviewsPro
             <p className="mt-1 text-xs">Schedule your next interview to see it here</p>
           </div>
         )}
+
+        {isAddInterview && <div>Add Interviews</div>}
       </div>
     </div>
   );

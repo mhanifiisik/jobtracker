@@ -32,7 +32,6 @@ function JobsPage() {
     }
   };
 
-  // Get unique sources from jobs
   const jobSources = useMemo(() => {
     const sources = new Set<string>();
     jobs.forEach(job => {
